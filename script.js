@@ -1,39 +1,69 @@
 Parse.initialize("bVFoQYUP5OzQ9QVkcLVjnvwcF9UWpo4NZENeaMwr", "nXrj16E8iYOgrHfZYTJ46VuBZs3mh56nS4B1ANxl");
+var DBContent = Parse.Object.extend("Content");
 
-var Content = Parse.Object.extend("Content");
+function Content(args) {
+  this.elem = args.elem;
+  this.initCss();
+  this.setId();
+  this.setQuery();
+}
 
-var $contentElems = $('[data-cms]');
+Content.prototype.initCss = function() {
+  this.makeEditable();
+  this.elem.css('display', 'none');
+}
 
-$contentElems.each(function(i) {
-  var $elem = $(this);
-  $elem.attr('contentEditable', true);
-  $elem.css('display', 'none');
+Content.prototype.makeEditable = function() {
+  this.elem.attr('contentEditable', true);
+}
 
-  var contentId = $elem.data('cms');
+Content.prototype.setId = function() {
+  this.id = this.elem.data('cms');
+}
 
-  var query = new Parse.Query(Content);
-  query.equalTo("contentId", contentId);
+Content.prototype.setQuery = function() {
+  this.query = new Parse.Query(DBContent);
+  this.query.equalTo('contentId', this.id);
+}
 
-  query.first().then(function(savedContent) {
-    if (!!savedContent) {
-      // load already-saved content into appropriate place
-      $elem.html(savedContent.get('html'));
-      $elem.css('display', '');
-    } else {
-      // first instance of the content. save it to the DB
-      var content = new Content();
-      content.save({
-        contentId: contentId,
-        html: $elem.html()
-      });
-    }
+Content.prototype.findFromDB = function() {
+  return this.query.first();
+};
+
+Content.prototype.syncFromDB = function(dbObject) {
+  this.dbObject = dbObject;
+  this.elem.html(dbObject.get('html'));
+  this.elem.css('display', '');
+};
+
+Content.prototype.saveToDB = function() {
+  if (!!this.dbObject) {
+    this.dbObject.save({
+      html: this.elem.html()
+    });
+  }
+};
+
+$('[data-cms]').each(function() {
+  var content = new Content({
+    elem: $(this)
   });
 
-  $elem.blur(function(ev) {
-    query.first().then(function(savedContent) {
-      savedContent.save({
-        html: $elem.html()
-      });
-    });
+  content.elem.blur(function() {
+    content.saveToDB();
+  });
+
+  content.findFromDB().then(function(dbObject) {
+    if (!!dbObject) {
+      // load already-saved content into appropriate place
+      content.syncFromDB(dbObject);
+    } else {
+      // first instance of the content. save it to the DB
+      content.dbObject = new ParseContent();
+      content.dbObject.save({
+        contentId: content.id,
+        html: content.elem.html()
+      })
+    }
   });
 });

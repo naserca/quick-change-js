@@ -59,7 +59,7 @@ $('[data-cms]').each(function() {
       content.syncFromDB(dbObject);
     } else {
       // first instance of the content. save it to the DB
-      content.dbObject = new ParseContent();
+      content.dbObject = new DBContent();
       content.dbObject.save({
         contentId: content.id,
         html: content.elem.html()

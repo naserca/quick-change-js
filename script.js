@@ -1,69 +1,99 @@
-Parse.initialize("bVFoQYUP5OzQ9QVkcLVjnvwcF9UWpo4NZENeaMwr", "nXrj16E8iYOgrHfZYTJ46VuBZs3mh56nS4B1ANxl");
-var DBContent = Parse.Object.extend("Content");
-
-function Content(args) {
-  this.elem = args.elem;
-  this.initCss();
-  this.setId();
-  this.setQuery();
+function CMSProto(appId, jsKey, options) {
+  return this.init(appId, jsKey, options);
 }
 
-Content.prototype.initCss = function() {
-  this.makeEditable();
-  this.elem.css('display', 'none');
-}
+(function (window, document) {
 
-Content.prototype.makeEditable = function() {
-  this.elem.attr('contentEditable', true);
-}
+  var DBContent = Parse.Object.extend("Content");
 
-Content.prototype.setId = function() {
-  this.id = this.elem.data('cms');
-}
+  CMSProto.prototype = {
 
-Content.prototype.setQuery = function() {
-  this.query = new Parse.Query(DBContent);
-  this.query.equalTo('contentId', this.id);
-}
+    init: function(appId, jsKey, options) {
+      Parse.initialize(appId, jsKey);
+      this.activateElems();
+    },
 
-Content.prototype.findFromDB = function() {
-  return this.query.first();
-};
+    activateElems: function() {
+      $('[data-cms]').each(function() {
+        var content = new Content({
+          elem: $(this)
+        });
 
-Content.prototype.syncFromDB = function(dbObject) {
-  this.dbObject = dbObject;
-  this.elem.html(dbObject.get('html'));
-  this.elem.css('display', '');
-};
+        content.elem.blur(function() {
+          content.saveToDB();
+        });
 
-Content.prototype.saveToDB = function() {
-  if (!!this.dbObject) {
-    this.dbObject.save({
-      html: this.elem.html()
-    });
+        content.findFromDB().then(function(dbObject) {
+          content.syncFromDB(dbObject);
+        });
+      });
+    },
+
   }
-};
 
-$('[data-cms]').each(function() {
-  var content = new Content({
-    elem: $(this)
-  });
+  // represent single editable elems
 
-  content.elem.blur(function() {
-    content.saveToDB();
-  });
+  function Content(args) {
+    this.elem = args.elem;
+    this.initCss();
+    this.setId();
+    this.setQuery();
+  }
 
-  content.findFromDB().then(function(dbObject) {
-    if (!!dbObject) {
-      // load already-saved content into appropriate place
-      content.syncFromDB(dbObject);
-    } else {
-      // first instance of the content. save it to the DB
-      content.dbObject = new DBContent();
-      content.dbObject.save({
-        contentId: content.id,
-        html: content.elem.html()
-      })
+  Content.prototype = {
+
+    initCss: function() {
+      this.makeEditable();
+      this.elem.css('display', 'none');
+    },
+
+    makeEditable: function() {
+      this.elem.attr('contentEditable', true);
+    },
+
+    setId: function() {
+      this.id = this.elem.data('cms');
+    },
+
+    setQuery: function() {
+      this.query = new Parse.Query(DBContent);
+      this.query.equalTo('contentId', this.id);
+    },
+
+    findFromDB: function() {
+      return this.query.first();
+    },
+
+    syncFromDB: function(dbObject) {
+      if (!!dbObject) {
+        // load already-saved content into appropriate place
+        this.displayFromDB(dbObject);
+      } else {
+        // first instance of the content. save it to the DB
+        this.dbObject = new DBContent();
+        this.dbObject.save({
+          contentId: this.id,
+          html: this.elem.html()
+        })
+      }
+    },
+
+    displayFromDB: function(dbObject) {
+      this.dbObject = dbObject;
+      this.elem.html(dbObject.get('html'));
+      this.elem.css('display', '');
+    },
+
+    saveToDB: function() {
+      if (!!this.dbObject) {
+        this.dbObject.save({
+          html: this.elem.html()
+        });
+      }
     }
-  });
-});
+
+  }
+
+}(window, document));
+
+new CMSProto("bVFoQYUP5OzQ9QVkcLVjnvwcF9UWpo4NZENeaMwr", "nXrj16E8iYOgrHfZYTJ46VuBZs3mh56nS4B1ANxl");

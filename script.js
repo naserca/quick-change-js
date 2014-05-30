@@ -1,4 +1,4 @@
-function CMSProto(appId, jsKey, options) {
+function QuickChange(appId, jsKey, options) {
   return this.init(appId, jsKey, options);
 }
 
@@ -6,11 +6,14 @@ function CMSProto(appId, jsKey, options) {
 
   var DBContent = Parse.Object.extend("Content");
 
-  CMSProto.prototype = {
+  QuickChange.prototype = {
 
     init: function(appId, jsKey, options) {
-      Parse.initialize(appId, jsKey);
-      this.activateElems();
+      // if (this.userAuthed()) {
+        Parse.initialize(appId, jsKey);
+        this.insertStyleTag();
+        this.activateElems();
+      // }
     },
 
     activateElems: function() {
@@ -28,6 +31,19 @@ function CMSProto(appId, jsKey, options) {
         });
       });
     },
+
+    insertStyleTag: function() {
+      $('head').append(this.$style());
+    },
+
+    $style: function() {
+      var styleTag = "<style> " +
+        "[data-cms] { outline: 0 solid transparent } " +
+        "[data-cms]:focus { outline: 6px solid #c4ffcc } " +
+      "</style>";
+
+      return $(styleTag);
+    }
 
   }
 
@@ -54,7 +70,9 @@ function CMSProto(appId, jsKey, options) {
 
     initCss: function() {
       this.makeEditable();
-      this.elem.css('display', 'none');
+      this.elem.css({
+        display: 'none',
+      });
     },
 
     makeEditable: function() {
@@ -67,7 +85,7 @@ function CMSProto(appId, jsKey, options) {
           html: this.elem.html()
         });
       }
-    }
+    },
 
     setId: function() {
       this.id = this.elem.data('cms');
@@ -88,7 +106,8 @@ function CMSProto(appId, jsKey, options) {
         this.dbObject.save({
           contentId: this.id,
           html: this.elem.html()
-        })
+        });
+        this.elem.css('display', '');
       }
     },
 
@@ -96,3 +115,54 @@ function CMSProto(appId, jsKey, options) {
 
 }(window, document));
 
+// $('a.cms-signup').click(function(ev) {
+//   ev.preventDefault();
+//   $('div.cms-signup').fadeIn();
+// });
+
+// $('div.cms-signup').click(function(ev) {
+//   ev.preventDefault();
+//   $('div.cms-signup .loading').show();
+//   user = new Parse.User();
+//   user.signUp({
+//     username: $('div.cms-signup .username'),
+//     password: $('div.cms-signup .password'),
+//     ownerCode: $('div.cms-signup .owner-code')
+//   }), {
+//     success: function(user) {
+//       debugger
+//       $('div.cms-signup').fadeOut();
+//       allowContentEditable();
+//     },
+//     error: function(user, error) {
+//       debugger
+//       // Show the error message somewhere and let the user try again.
+//       alert("Error: " + error.code + " " + error.message);
+//     }
+//   });
+// });
+
+
+
+// $('a.cms-login').click(function(ev) {
+//   ev.preventDefault();
+//   $('div.cms-login').fadeIn();
+// });
+
+// $('div.cms-login').click(function(ev) {
+//   ev.preventDefault();
+//   user = new Parse.User()
+//   user.signUp({
+//     username: $('div.cms-signup .username'),
+//     password: $('div.cms-signup .password'),
+//     ownerCode: $('div.cms-signup .owner-code')
+//   }), {
+//     success: function(user) {
+//       // Hooray! Let them use the app now.
+//     },
+//     error: function(user, error) {
+//       // Show the error message somewhere and let the user try again.
+//       alert("Error: " + error.code + " " + error.message);
+//     }
+//   });
+// });

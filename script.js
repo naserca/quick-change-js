@@ -42,6 +42,16 @@ function CMSProto(appId, jsKey, options) {
 
   Content.prototype = {
 
+    displayFromDB: function(dbObject) {
+      this.dbObject = dbObject;
+      this.elem.html(dbObject.get('html'));
+      this.elem.css('display', '');
+    },
+
+    findFromDB: function() {
+      return this.query.first();
+    },
+
     initCss: function() {
       this.makeEditable();
       this.elem.css('display', 'none');
@@ -51,6 +61,14 @@ function CMSProto(appId, jsKey, options) {
       this.elem.attr('contentEditable', true);
     },
 
+    saveToDB: function() {
+      if (!!this.dbObject) {
+        this.dbObject.save({
+          html: this.elem.html()
+        });
+      }
+    }
+
     setId: function() {
       this.id = this.elem.data('cms');
     },
@@ -58,10 +76,6 @@ function CMSProto(appId, jsKey, options) {
     setQuery: function() {
       this.query = new Parse.Query(DBContent);
       this.query.equalTo('contentId', this.id);
-    },
-
-    findFromDB: function() {
-      return this.query.first();
     },
 
     syncFromDB: function(dbObject) {
@@ -78,22 +92,7 @@ function CMSProto(appId, jsKey, options) {
       }
     },
 
-    displayFromDB: function(dbObject) {
-      this.dbObject = dbObject;
-      this.elem.html(dbObject.get('html'));
-      this.elem.css('display', '');
-    },
-
-    saveToDB: function() {
-      if (!!this.dbObject) {
-        this.dbObject.save({
-          html: this.elem.html()
-        });
-      }
-    }
-
   }
 
 }(window, document));
 
-new CMSProto("bVFoQYUP5OzQ9QVkcLVjnvwcF9UWpo4NZENeaMwr", "nXrj16E8iYOgrHfZYTJ46VuBZs3mh56nS4B1ANxl");

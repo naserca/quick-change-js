@@ -8,12 +8,28 @@ function QuickChange(appId, jsKey, options) {
 
   QuickChange.prototype = {
 
+    elems: {
+      $signupA: $('a.cms-signup'),
+      $signupDiv: $("<div href='#' class='cms-signup' style='display: none;'>" +
+        "<form>" +
+          "<input name='username' type='text' placeholder='username' />" +
+          "<input name='password' type='password' placeholder='password' />" +
+          "<input name='owner-code' type='password' placeholder='owner-code' />" +
+          "<a href='#'>submit</a>" +
+        "</form>" +
+      "</div>")
+    },
+
     init: function(appId, jsKey, options) {
-      // if (this.userAuthed()) {
-        Parse.initialize(appId, jsKey);
-        this.insertStyleTag();
-        this.activateElems();
-      // }
+      Parse.initialize(appId, jsKey);
+      this.initCss();
+      this.insertStyleTag();
+      this.activateElems();
+      if (Parse.User.current()) {
+        this.makeElemsEditable();
+      } else {
+        this.setupSignup();
+      }
     },
 
     activateElems: function() {
@@ -32,6 +48,52 @@ function QuickChange(appId, jsKey, options) {
       });
     },
 
+    initCss: function() {
+      this.elems.$signupA.hide();
+    },
+
+    makeElemsEditable: function() {
+      $('[data-cms]').attr('contentEditable', true);
+    },
+
+    setupSignup: function() {
+      that = this;
+      this.elems.$signupA.show();
+      $('body').append(this.elems.$signupDiv);
+      this.elems.$signupA.click(function(ev) {
+        ev.preventDefault();
+        that.elems.$signupDiv.fadeIn();
+      });
+      $('div.cms-signup a').click(function(ev) {
+        ev.preventDefault();
+        that.handleSignupSubmit();
+      });
+    },
+
+    handleSignupSubmit: function() {
+      var $username = $('div.cms-signup [name=username]'),
+          $password = $('div.cms-signup [name=password]'),
+          $ownerCode = $('div.cms-signup [name=owner-code]');
+
+      var user = new Parse.User();
+      user.set("username", $username.val());
+      user.set("password", $password.val());
+      user.set("ownerCode", $ownerCode.val());
+
+      user.signUp(null, {
+        success: function(user) {
+          that.elems.$signupDiv.fadeOut();
+          that.elems.$signupDiv.remove();
+          that.elems.$signupA.hide();
+          that.makeElemsEditable();
+        },
+        error: function(user, error) {
+          $username.val(''); $password.val(''); $ownerCode.val('');
+          alert(error.message);
+        }
+      });
+    },
+
     insertStyleTag: function() {
       $('head').append(this.$style());
     },
@@ -40,6 +102,45 @@ function QuickChange(appId, jsKey, options) {
       var styleTag = "<style> " +
         "[data-cms] { outline: 0 solid transparent } " +
         "[data-cms]:focus { outline: 6px solid #c4ffcc } " +
+        "div.cms-login, div.cms-signup {" +
+          "position: fixed;" +
+          "left: 50%;" +
+          "top: 50%;" +
+          "height: 200px;" +
+          "width: 300px;" +
+          "margin-top: -100px;" +
+          "margin-left: -150px;" +
+          "background-color: rgb(45,45,45);" +
+          "padding: 1em;" +
+          "box-sizing: border-box;" +
+          "color: rgb(45,45,45);" +
+          "font-family: Helvetica, Arial;" +
+        "}" +
+        "div.cms-login, div.cms-signup input {" +
+          "width: 100%;" +
+          "display: block;" +
+          "padding: .75em;" +
+          "margin-bottom: 1em;" +
+          "box-sizing: border-box;" +
+          "outline: 0;" +
+          "border: 0;" +
+        "}" +
+        "div.cms-login, div.cms-signup input:focus {" +
+          "outline: 0;" +
+          "background-color: #c4ffcc;" +
+        "}" +
+        "div.cms-login, div.cms-signup a {" +
+          "display: inline-block;" +
+          "text-decoration: none;" +
+          "color: #c4ffcc;" +
+          "padding: .5em;" +
+          "border: solid 2px #c4ffcc;" +
+          "border-radius: 6px;" +
+        "}" +
+        "div.cms-login, div.cms-signup a:hover {" +
+          "color: rgb(45,45,45);" +
+          "background-color: #c4ffcc;" +
+        "}" +
       "</style>";
 
       return $(styleTag);
@@ -69,14 +170,9 @@ function QuickChange(appId, jsKey, options) {
     },
 
     initCss: function() {
-      this.makeEditable();
       this.elem.css({
         display: 'none',
       });
-    },
-
-    makeEditable: function() {
-      this.elem.attr('contentEditable', true);
     },
 
     saveToDB: function() {
@@ -114,55 +210,3 @@ function QuickChange(appId, jsKey, options) {
   }
 
 }(window, document));
-
-// $('a.cms-signup').click(function(ev) {
-//   ev.preventDefault();
-//   $('div.cms-signup').fadeIn();
-// });
-
-// $('div.cms-signup').click(function(ev) {
-//   ev.preventDefault();
-//   $('div.cms-signup .loading').show();
-//   user = new Parse.User();
-//   user.signUp({
-//     username: $('div.cms-signup .username'),
-//     password: $('div.cms-signup .password'),
-//     ownerCode: $('div.cms-signup .owner-code')
-//   }), {
-//     success: function(user) {
-//       debugger
-//       $('div.cms-signup').fadeOut();
-//       allowContentEditable();
-//     },
-//     error: function(user, error) {
-//       debugger
-//       // Show the error message somewhere and let the user try again.
-//       alert("Error: " + error.code + " " + error.message);
-//     }
-//   });
-// });
-
-
-
-// $('a.cms-login').click(function(ev) {
-//   ev.preventDefault();
-//   $('div.cms-login').fadeIn();
-// });
-
-// $('div.cms-login').click(function(ev) {
-//   ev.preventDefault();
-//   user = new Parse.User()
-//   user.signUp({
-//     username: $('div.cms-signup .username'),
-//     password: $('div.cms-signup .password'),
-//     ownerCode: $('div.cms-signup .owner-code')
-//   }), {
-//     success: function(user) {
-//       // Hooray! Let them use the app now.
-//     },
-//     error: function(user, error) {
-//       // Show the error message somewhere and let the user try again.
-//       alert("Error: " + error.code + " " + error.message);
-//     }
-//   });
-// });

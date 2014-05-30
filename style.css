@@ -1,5 +1,43 @@
-body {
-  margin: 0 auto;
-  max-width: 600px;
-  width: 92%;
+/*div.cms-login, div.cms-signup {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  height: 200px;
+  width: 300px;
+  margin-top: -100px;
+  margin-left: -150px;
+  background-color: rgb(45,45,45);
+  padding: 1em;
+  box-sizing: border-box;
+  color: rgb(45,45,45);
+  font-family: Helvetica, Arial;
 }
+
+div.cms-login, div.cms-signup input {
+  width: 100%;
+  display: block;
+  padding: .75em;
+  margin-bottom: 1em;
+  box-sizing: border-box;
+  outline: 0;
+  border: 0;
+}
+
+div.cms-login, div.cms-signup input:focus {
+  outline: 0;
+  background-color: #c4ffcc;
+}
+
+div.cms-login, div.cms-signup a {
+  display: inline-block;
+  text-decoration: none;
+  color: #c4ffcc;
+  padding: .5em;
+  border: solid 2px #c4ffcc;
+  border-radius: 6px;
+}
+
+div.cms-login, div.cms-signup a:hover {
+  color: rgb(45,45,45);
+  background-color: #c4ffcc;
+}*/

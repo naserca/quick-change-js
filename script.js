@@ -36,7 +36,7 @@ function QuickChange(appId, jsKey, options) {
       if (Parse.User.current())
         this.makeElemsEditable();
       else
-        this.setupSignupAndLogin();
+        this.setupSignupOrLogin();
     },
 
     ////////// methods
@@ -61,6 +61,7 @@ function QuickChange(appId, jsKey, options) {
       this.findModalElems();
       this.elems.$body.append(this.elems.$modal);
       this.elems.$modal.fadeIn();
+      this.setupBodyClickHandler();
     },
 
     clearUrlTrigger: function() {
@@ -68,6 +69,10 @@ function QuickChange(appId, jsKey, options) {
       var trigger = url.match(this.urlTriggerRes.login) || url.match(this.urlTriggerRes.signup);
       var cleanUrl = url.replace(trigger[0], '');
       return window.location.replace(cleanUrl);
+    },
+
+    handleBodyClick: function(ev) {
+      this.elems.$modal.fadeOut(this.clearUrlTrigger.bind(this));
     },
 
     findModalElems: function() {
@@ -132,6 +137,13 @@ function QuickChange(appId, jsKey, options) {
       this.elems.$editable.attr('contentEditable', true);
     },
 
+    setupBodyClickHandler: function() {
+      this.elems.$body.click(this.handleBodyClick.bind(this));
+      this.elems.$modal.click(function(ev) {
+        ev.stopPropagation();
+      });
+    },
+
     setupLogin: function() {
       this.elems.$modal.$ownerCode.remove();
       this.elems.$modal.$submit.click(this.handleLoginSubmit.bind(this));
@@ -141,7 +153,7 @@ function QuickChange(appId, jsKey, options) {
       this.elems.$modal.$submit.click(this.handleSignupSubmit.bind(this));
     },
 
-    setupSignupAndLogin: function() {
+    setupSignupOrLogin: function() {
       if (this.loginOrSignupTriggered()) {
         this.addModal();
         if (this.signupTriggered())

@@ -6,6 +6,8 @@ function QuickChange(appId, jsKey, options) {
 
   QuickChange.prototype = {
 
+    ////////// defaults
+
     urlTriggerRes: {
       signup: /#qcsignup/,
       login: /#qclogin/
@@ -25,16 +27,19 @@ function QuickChange(appId, jsKey, options) {
       $editable: $('[data-cms]'),
     },
 
+    ////////// init
+
     init: function(appId, jsKey, options) {
       Parse.initialize(appId, jsKey);
       this.insertStyleTag();
       this.activateElems();
-      if (Parse.User.current()) {
+      if (Parse.User.current())
         this.makeElemsEditable();
-      } else {
+      else
         this.setupSignupAndLogin();
-      }
     },
+
+    ////////// methods
 
     activateElems: function() {
       this.elems.$editable.each(function() {
@@ -58,22 +63,23 @@ function QuickChange(appId, jsKey, options) {
       this.elems.$modal.fadeIn();
     },
 
-    signupTriggered: function() {
-      return this.urlTriggerRes.signup.test(document.URL);
+    clearUrlTrigger: function() {
+      var url = document.URL;
+      var trigger = url.match(this.urlTriggerRes.login) || url.match(this.urlTriggerRes.signup);
+      var cleanUrl = url.replace(trigger[0], '');
+      return window.location.replace(cleanUrl);
     },
 
-    loginTriggered: function() {
-      return this.urlTriggerRes.login.test(document.URL);
+    findModalElems: function() {
+      this.elems.$modal.$username  = this.elems.$modal.find('[name=username]');
+      this.elems.$modal.$password  = this.elems.$modal.find('[name=password]');
+      this.elems.$modal.$ownerCode = this.elems.$modal.find('[name=owner-code]');
+      this.elems.$modal.$submit    = this.elems.$modal.find('.submit');
     },
 
-    setupSignupAndLogin: function() {
-      if (this.loginOrSignupTriggered()) {
-        this.addModal();
-        if (this.signupTriggered())
-          this.setupSignup();
-        else if (this.loginTriggered())
-          this.setupLogin();
-      }
+    handleLoginError: function(user, error) {
+      $username.val(''); $password.val('');
+      alert(error.message);
     },
 
     handleLoginSubmit: function(ev) {
@@ -83,11 +89,6 @@ function QuickChange(appId, jsKey, options) {
         success: this.handleLoginOrSignupSuccess.bind(this),
         error: this.handleLoginError.bind(this)
       });
-    },
-
-    handleLoginError: function(user, error) {
-      $username.val(''); $password.val('');
-      alert(error.message);
     },
 
     handleLoginOrSignupSuccess: function(user) {
@@ -115,15 +116,16 @@ function QuickChange(appId, jsKey, options) {
       });
     },
 
-    findModalElems: function() {
-      this.elems.$modal.$username  = this.elems.$modal.find('[name=username]');
-      this.elems.$modal.$password  = this.elems.$modal.find('[name=password]');
-      this.elems.$modal.$ownerCode = this.elems.$modal.find('[name=owner-code]');
-      this.elems.$modal.$submit    = this.elems.$modal.find('.submit');
-    },
-
     insertStyleTag: function() {
       this.elems.$head.append(this.$style());
+    },
+
+    loginOrSignupTriggered: function() {
+      return (this.signupTriggered()) || (this.loginTriggered());
+    },
+
+    loginTriggered: function() {
+      return this.urlTriggerRes.login.test(document.URL);
     },
 
     makeElemsEditable: function() {
@@ -139,18 +141,21 @@ function QuickChange(appId, jsKey, options) {
       this.elems.$modal.$submit.click(this.handleSignupSubmit.bind(this));
     },
 
-    loginOrSignupTriggered: function() {
-      return (this.signupTriggered()) || (this.loginTriggered());
+    setupSignupAndLogin: function() {
+      if (this.loginOrSignupTriggered()) {
+        this.addModal();
+        if (this.signupTriggered())
+          this.setupSignup();
+        else if (this.loginTriggered())
+          this.setupLogin();
+      }
     },
 
-    clearUrlTrigger: function() {
-      var url = document.URL;
-      var trigger = url.match(this.urlTriggerRes.login) || url.match(this.urlTriggerRes.signup);
-      var cleanUrl = url.replace(trigger[0], '');
-      return window.location.replace(cleanUrl);
+    signupTriggered: function() {
+      return this.urlTriggerRes.signup.test(document.URL);
     },
 
-    // style tag here to avoid separate sheet
+    ////////// style tag
 
     $style: function() {
       var styleTag = "<style> " +

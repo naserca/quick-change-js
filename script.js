@@ -4,8 +4,6 @@ function QuickChange(appId, jsKey, options) {
 
 (function (window, document) {
 
-  var DBContent = Parse.Object.extend("Content");
-
   QuickChange.prototype = {
 
     elems: {
@@ -48,28 +46,6 @@ function QuickChange(appId, jsKey, options) {
       });
     },
 
-    initCss: function() {
-      this.elems.$signupA.hide();
-    },
-
-    makeElemsEditable: function() {
-      $('[data-cms]').attr('contentEditable', true);
-    },
-
-    setupSignup: function() {
-      that = this;
-      this.elems.$signupA.show();
-      $('body').append(this.elems.$signupDiv);
-      this.elems.$signupA.click(function(ev) {
-        ev.preventDefault();
-        that.elems.$signupDiv.fadeIn();
-      });
-      $('div.cms-signup a').click(function(ev) {
-        ev.preventDefault();
-        that.handleSignupSubmit();
-      });
-    },
-
     handleSignupSubmit: function() {
       var $username = $('div.cms-signup [name=username]'),
           $password = $('div.cms-signup [name=password]'),
@@ -94,9 +70,33 @@ function QuickChange(appId, jsKey, options) {
       });
     },
 
+    initCss: function() {
+      this.elems.$signupA.hide();
+    },
+
     insertStyleTag: function() {
       $('head').append(this.$style());
     },
+
+    makeElemsEditable: function() {
+      $('[data-cms]').attr('contentEditable', true);
+    },
+
+    setupSignup: function() {
+      that = this;
+      this.elems.$signupA.show();
+      $('body').append(this.elems.$signupDiv);
+      this.elems.$signupA.click(function(ev) {
+        ev.preventDefault();
+        that.elems.$signupDiv.fadeIn();
+      });
+      $('div.cms-signup a').click(function(ev) {
+        ev.preventDefault();
+        that.handleSignupSubmit();
+      });
+    },
+
+    // style tag here to avoid separate sheet
 
     $style: function() {
       var styleTag = "<style> " +
@@ -159,10 +159,14 @@ function QuickChange(appId, jsKey, options) {
 
   Content.prototype = {
 
-    displayFromDB: function(dbObject) {
-      this.dbObject = dbObject;
-      this.elem.html(dbObject.get('html'));
-      this.elem.css('display', '');
+    DBContent: Parse.Object.extend("Content"),
+
+    createDBobject: function() {
+      this.dbObject = new this.DBContent();
+      this.dbObject.save({
+        contentId: this.id,
+        html: this.elem.html()
+      });
     },
 
     findFromDB: function() {
@@ -175,8 +179,13 @@ function QuickChange(appId, jsKey, options) {
       });
     },
 
+    loadFromDB: function(dbObject) {
+      this.dbObject = dbObject;
+      this.elem.html(dbObject.get('html'));
+    },
+
     saveToDB: function() {
-      if (!!this.dbObject) {
+      if (!!this.dbObject && Parse.User.current()) {
         this.dbObject.save({
           html: this.elem.html()
         });
@@ -188,23 +197,19 @@ function QuickChange(appId, jsKey, options) {
     },
 
     setQuery: function() {
-      this.query = new Parse.Query(DBContent);
+      this.query = new Parse.Query(this.DBContent);
       this.query.equalTo('contentId', this.id);
     },
 
     syncFromDB: function(dbObject) {
       if (!!dbObject) {
         // load already-saved content into appropriate place
-        this.displayFromDB(dbObject);
+        this.loadFromDB(dbObject);
       } else {
         // first instance of the content. save it to the DB
-        this.dbObject = new DBContent();
-        this.dbObject.save({
-          contentId: this.id,
-          html: this.elem.html()
-        });
-        this.elem.css('display', '');
+        this.createDBobject();
       }
+      this.elem.css('display', '');
     },
 
   }

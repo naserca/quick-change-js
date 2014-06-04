@@ -78,7 +78,7 @@ function QuickChange(appId, jsKey, options) {
     },
 
     handleLoginError: function(user, error) {
-      $username.val(''); $password.val('');
+      this.elems.$modal.$username.val(''); this.elems.$modal.$password.val('');
       alert(error.message);
     },
 
@@ -98,7 +98,7 @@ function QuickChange(appId, jsKey, options) {
     },
 
     handleSignupError: function(user, error) {
-      $username.val(''); $password.val(''); $ownerCode.val('');
+      this.elems.$modal.$username.val(''); this.elems.$modal.$password.val(''); this.elems.$modal.$ownerCode.val('');
       alert(error.message);
     },
 

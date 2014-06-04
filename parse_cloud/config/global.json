@@ -1,0 +1,14 @@
+{
+    "applications": {
+        "CMS Prototype": {
+            "applicationId": "bVFoQYUP5OzQ9QVkcLVjnvwcF9UWpo4NZENeaMwr", 
+            "masterKey": "bd28Ikm90WLBSSxFRMCStXZK5U0WiGctAeKrR1Fp"
+        }, 
+        "_default": {
+            "link": "CMS Prototype"
+        }
+    }, 
+    "global": {
+        "parseVersion": "1.2.18"
+    }
+}

@@ -42,8 +42,10 @@ function QuickChange(appId, jsKey, options) {
     ////////// methods
 
     activateElems: function() {
+      var qc = this;
       this.elems.$editable.each(function() {
         var content = new Content({
+          qc: qc,
           elem: $(this)
         });
 
@@ -97,6 +99,7 @@ function QuickChange(appId, jsKey, options) {
     },
 
     handleLoginOrSignupSuccess: function(user) {
+      this.currentUser = user;
       this.elems.$modal.fadeOut(this.elems.$modal.remove);
       this.makeElemsEditable();
       this.clearUrlTrigger();
@@ -171,6 +174,35 @@ function QuickChange(appId, jsKey, options) {
 
     $style: function() {
       var styleTag = "<style> " +
+        "div#cms-menu {" +
+          "position: fixed;" +
+          "top: 0;" +
+          "right: 0;" +
+          "z-index: 9999;" +
+          "margin: 1rem;" +
+          "font-family: Helvetica, Arial;" +
+        "}" +
+        "a#cms-reveal {" +
+          "position: relative;" +
+          "padding: 1rem;" +
+          "display: block;" +
+          "color: #c4ffcc;" +
+          "text-decoration: none;" +
+          "font-weight: 700;" +
+          "border-radius: 0.25em;" +
+          "border: 0;" +
+          "outline: 0;" +
+          "background-color: #2d2d2d;" +
+          "box-shadow: 0px 2px 0px 0px #2d2d2d;" +
+        "}" +
+        "a#cms-reveal:hover {" +
+          "background-color: #6c6c6c;" +
+        "}" +
+        "a#cms-reveal:active {" +
+          "background-color: #2d2d2d;" +
+          "box-shadow: none;" +
+          "top: 2px;" +
+        "}" +
         "[data-cms] { outline: 0 solid transparent } " +
         "[data-cms]:focus { outline: 6px solid #c4ffcc } " +
         "div.cms-modal {" +
@@ -181,10 +213,10 @@ function QuickChange(appId, jsKey, options) {
           "width: 300px;" +
           "margin-top: -100px;" +
           "margin-left: -150px;" +
-          "background-color: rgb(45,45,45);" +
+          "background-color: #2d2d2d;" +
           "padding: 1em;" +
           "box-sizing: border-box;" +
-          "color: rgb(45,45,45);" +
+          "color: #2d2d2d;" +
           "font-family: Helvetica, Arial;" +
         "}" +
         "div.cms-modal input {" +
@@ -209,7 +241,7 @@ function QuickChange(appId, jsKey, options) {
           "border-radius: 6px;" +
         "}" +
         "div.cms-modal a:hover {" +
-          "color: rgb(45,45,45);" +
+          "color: #2d2d2d;" +
           "background-color: #c4ffcc;" +
         "}" +
       "</style>";
@@ -222,6 +254,7 @@ function QuickChange(appId, jsKey, options) {
   // represent single editable elems
 
   function Content(args) {
+    this.qc = args.qc;
     this.elem = args.elem;
     this.initCss();
     this.setId();
@@ -230,7 +263,11 @@ function QuickChange(appId, jsKey, options) {
 
   Content.prototype = {
 
+    ////////// defaults
+
     DBContent: Parse.Object.extend("Content"),
+
+    ////////// methods
 
     createDBobject: function() {
       this.dbObject = new this.DBContent();

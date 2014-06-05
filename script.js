@@ -33,7 +33,8 @@ function QuickChange(appId, jsKey, options) {
       Parse.initialize(appId, jsKey);
       this.insertStyleTag();
       this.activateElems();
-      if (Parse.User.current())
+      this.currentUser = Parse.User.current();
+      if (!!this.currentUser)
         this.makeElemsEditable();
       else
         this.setupSignupOrLogin();
@@ -46,12 +47,11 @@ function QuickChange(appId, jsKey, options) {
       this.elems.$editable.each(function() {
         var content = new Content({
           qc: qc,
+          currentUser: qc.currentUser,
           elem: $(this)
         });
 
-        content.elem.blur(function() {
-          content.saveToDB();
-        });
+        content.elem.blur(content.saveToDB.bind(content));
 
         content.findFromDB().then(function(dbObject) {
           content.syncFromDB(dbObject);
@@ -254,7 +254,7 @@ function QuickChange(appId, jsKey, options) {
   // represent single editable elems
 
   function Content(args) {
-    this.qc = args.qc;
+    this.qc   = args.qc;
     this.elem = args.elem;
     this.initCss();
     this.setId();
@@ -270,11 +270,13 @@ function QuickChange(appId, jsKey, options) {
     ////////// methods
 
     createDBobject: function() {
-      this.dbObject = new this.DBContent();
-      this.dbObject.save({
+      var dbObject = new this.DBContent();
+      dbObject.save({
         contentId: this.id,
-        html: this.elem.html()
+        html: this.elem.html(),
+        pendingHtml: ''
       });
+      return dbObject;
     },
 
     findFromDB: function() {
@@ -289,14 +291,25 @@ function QuickChange(appId, jsKey, options) {
 
     loadFromDB: function(dbObject) {
       this.dbObject = dbObject;
-      this.elem.html(dbObject.get('html'));
+      this.isPending = (!!this.qc.currentUser && this.pendingHtmlIsInDb());
+      var html = (this.isPending) ? this.dbObject.get('pendingHtml') : this.dbObject.get('html');
+      this.elem.html(html);
+    },
+
+    pendingHtmlIsInDb: function() {
+      return (this.dbObject.get('pendingHtml') != '');
     },
 
     saveToDB: function() {
-      if (!!this.dbObject && Parse.User.current()) {
-        this.dbObject.save({
-          html: this.elem.html()
-        });
+      if (!!this.qc.currentUser) {
+        if (this.qc.currentUser.get('role') != 'admin') {
+          this.dbObject.save({ pendingHtml: this.elem.html() });
+        } else {
+          this.dbObject.save({
+            html: this.elem.html(),
+            pendingHtml: ''
+          });
+        }
       }
     },
 
@@ -315,7 +328,7 @@ function QuickChange(appId, jsKey, options) {
         this.loadFromDB(dbObject);
       } else {
         // first instance of the content. save it to the DB
-        this.createDBobject();
+        this.dbObject = this.createDBobject();
       }
       this.elem.css('display', '');
     },

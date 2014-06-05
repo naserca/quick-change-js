@@ -10,7 +10,8 @@ function QuickChange(appId, jsKey, options) {
 
     urlTriggerRes: {
       signup: /#qcsignup/,
-      login: /#qclogin/
+      login:  /#qclogin/,
+      logout: /#qclogout/
     },
 
     elems: {
@@ -34,10 +35,12 @@ function QuickChange(appId, jsKey, options) {
       this.insertStyleTag();
       this.activateElems();
       this.currentUser = Parse.User.current();
-      if (!!this.currentUser)
+      if (!!this.currentUser) {
         this.makeElemsEditable();
-      else
+        this.setupLogout();
+      } else {
         this.setupSignupOrLogin();
+      }
     },
 
     ////////// methods
@@ -51,10 +54,10 @@ function QuickChange(appId, jsKey, options) {
           elem: $(this)
         });
 
-        content.elem.blur(content.saveToDB.bind(content));
+        content.elem.blur(content.saveToDb.bind(content));
 
-        content.findFromDB().then(function(dbObject) {
-          content.syncFromDB(dbObject);
+        content.findFromDb().then(function(dbObject) {
+          content.syncFromDb(dbObject);
         });
       });
     },
@@ -68,7 +71,7 @@ function QuickChange(appId, jsKey, options) {
 
     clearUrlTrigger: function() {
       var url = document.URL;
-      var trigger = url.match(this.urlTriggerRes.login) || url.match(this.urlTriggerRes.signup);
+      var trigger = url.match(this.urlTriggerRes.login) || url.match(this.urlTriggerRes.signup) || url.match(this.urlTriggerRes.logout);
       var cleanUrl = url.replace(trigger[0], '');
       return window.location.replace(cleanUrl);
     },
@@ -136,8 +139,16 @@ function QuickChange(appId, jsKey, options) {
       return this.urlTriggerRes.login.test(document.URL);
     },
 
+    logoutTriggered: function() {
+      return this.urlTriggerRes.logout.test(document.URL);
+    },
+
     makeElemsEditable: function() {
       this.elems.$editable.attr('contentEditable', true);
+    },
+
+    makeElemsUneditable: function() {
+      this.elems.$editable.attr('contentEditable', false);
     },
 
     setupBodyClickHandler: function() {
@@ -150,6 +161,14 @@ function QuickChange(appId, jsKey, options) {
     setupLogin: function() {
       this.elems.$modal.$ownerCode.remove();
       this.elems.$modal.$submit.click(this.handleLoginSubmit.bind(this));
+    },
+
+    setupLogout: function() {
+      if (this.logoutTriggered()) {
+        Parse.User.logOut();
+        this.makeElemsUneditable();
+        setTimeout(this.clearUrlTrigger.bind(this), 2000);
+      }
     },
 
     setupSignup: function() {
@@ -194,6 +213,7 @@ function QuickChange(appId, jsKey, options) {
           "outline: 0;" +
           "background-color: #2d2d2d;" +
           "box-shadow: 0px 2px 0px 0px #2d2d2d;" +
+          "font-size: .75rem" +
         "}" +
         "a#cms-reveal:hover {" +
           "background-color: #6c6c6c;" +
@@ -269,7 +289,15 @@ function QuickChange(appId, jsKey, options) {
 
     ////////// methods
 
-    createDBobject: function() {
+    changeToLiveStyle: function() {
+      return this.elem.css('background-color', '');
+    },
+
+    changeToPendingStyle: function() {
+      return this.elem.css('background-color', '#ffcbaa');
+    },
+
+    createDbObject: function() {
       var dbObject = new this.DBContent();
       dbObject.save({
         contentId: this.id,
@@ -279,7 +307,7 @@ function QuickChange(appId, jsKey, options) {
       return dbObject;
     },
 
-    findFromDB: function() {
+    findFromDb: function() {
       return this.query.first();
     },
 
@@ -289,10 +317,17 @@ function QuickChange(appId, jsKey, options) {
       });
     },
 
-    loadFromDB: function(dbObject) {
+    loadFromDb: function(dbObject) {
       this.dbObject = dbObject;
       this.isPending = (!!this.qc.currentUser && this.pendingHtmlIsInDb());
-      var html = (this.isPending) ? this.dbObject.get('pendingHtml') : this.dbObject.get('html');
+      var html;
+      if (this.isPending) {
+        html = this.dbObject.get('pendingHtml');
+        this.changeToPendingStyle();
+      } else {
+        html = this.dbObject.get('html');
+        this.changeToLiveStyle();
+      }
       this.elem.html(html);
     },
 
@@ -300,7 +335,7 @@ function QuickChange(appId, jsKey, options) {
       return (this.dbObject.get('pendingHtml') != '');
     },
 
-    saveToDB: function() {
+    saveToDb: function() {
       if (!!this.qc.currentUser) {
         if (this.qc.currentUser.get('role') != 'admin') {
           this.dbObject.save({ pendingHtml: this.elem.html() });
@@ -309,6 +344,7 @@ function QuickChange(appId, jsKey, options) {
             html: this.elem.html(),
             pendingHtml: ''
           });
+          this.changeToLiveStyle();
         }
       }
     },
@@ -322,13 +358,13 @@ function QuickChange(appId, jsKey, options) {
       this.query.equalTo('contentId', this.id);
     },
 
-    syncFromDB: function(dbObject) {
+    syncFromDb: function(dbObject) {
       if (!!dbObject) {
         // load already-saved content into appropriate place
-        this.loadFromDB(dbObject);
+        this.loadFromDb(dbObject);
       } else {
         // first instance of the content. save it to the DB
-        this.dbObject = this.createDBobject();
+        this.dbObject = this.createDbObject();
       }
       this.elem.css('display', '');
     },

@@ -36,7 +36,7 @@ function QuickChange(appId, jsKey, options) {
       this.activateElems();
       this.currentUser = Parse.User.current();
       if (!!this.currentUser) {
-        this.makeElemsEditable();
+        this.toggleEditable(true);
         this.setupLogout();
       } else {
         this.setupSignupOrLogin();
@@ -104,7 +104,7 @@ function QuickChange(appId, jsKey, options) {
     handleLoginOrSignupSuccess: function(user) {
       this.currentUser = user;
       this.elems.$modal.fadeOut(this.elems.$modal.remove);
-      this.makeElemsEditable();
+      this.toggleEditable(true);
       this.clearUrlTrigger();
     },
 
@@ -143,12 +143,8 @@ function QuickChange(appId, jsKey, options) {
       return this.urlTriggerRes.logout.test(document.URL);
     },
 
-    makeElemsEditable: function() {
-      this.elems.$editable.attr('contentEditable', true);
-    },
-
-    makeElemsUneditable: function() {
-      this.elems.$editable.attr('contentEditable', false);
+    toggleEditable: function(isEditable) {
+      this.elems.$editable.attr('contentEditable', isEditable);
     },
 
     setupBodyClickHandler: function() {
@@ -166,7 +162,7 @@ function QuickChange(appId, jsKey, options) {
     setupLogout: function() {
       if (this.logoutTriggered()) {
         Parse.User.logOut();
-        this.makeElemsUneditable();
+        this.toggleEditable(false);
         setTimeout(this.clearUrlTrigger.bind(this), 2000);
       }
     },

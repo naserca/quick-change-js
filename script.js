@@ -28,6 +28,8 @@ function QuickChange(appId, jsKey, options) {
       $editable: $('[data-cms]'),
     },
 
+    contents: [],
+
     ////////// init
 
     init: function(appId, jsKey, options) {
@@ -53,12 +55,7 @@ function QuickChange(appId, jsKey, options) {
           currentUser: qc.currentUser,
           elem: $(this)
         });
-
-        content.elem.blur(content.saveToDb.bind(content));
-
-        content.findFromDb().then(function(dbObject) {
-          content.syncFromDb(dbObject);
-        });
+        qc.contents.push(content);
       });
     },
 
@@ -209,7 +206,8 @@ function QuickChange(appId, jsKey, options) {
           "outline: 0;" +
           "background-color: #2d2d2d;" +
           "box-shadow: 0px 2px 0px 0px #2d2d2d;" +
-          "font-size: .75rem" +
+          "font-size: .75rem;" +
+          "text-align: center;" +
         "}" +
         "a#cms-reveal:hover {" +
           "background-color: #6c6c6c;" +
@@ -275,6 +273,8 @@ function QuickChange(appId, jsKey, options) {
     this.initCss();
     this.setId();
     this.setQuery();
+    this.findAndSyncFromDb();
+    this.setupSaveOnBlur();
   }
 
   Content.prototype = {
@@ -301,6 +301,10 @@ function QuickChange(appId, jsKey, options) {
         pendingHtml: ''
       });
       return dbObject;
+    },
+
+    findAndSyncFromDb: function() {
+      this.findFromDb().then(this.syncFromDb.bind(this));
     },
 
     findFromDb: function() {
@@ -347,6 +351,10 @@ function QuickChange(appId, jsKey, options) {
 
     setId: function() {
       this.id = this.elem.data('cms');
+    },
+
+    setupSaveOnBlur: function() {
+      this.elem.blur(this.saveToDb.bind(this));
     },
 
     setQuery: function() {

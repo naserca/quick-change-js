@@ -4,3 +4,5 @@ dist
 .sass-cache
 bower_components
 test/bower_components
+parse_cloud/config.js
+parse_cloud/cloud/config.js

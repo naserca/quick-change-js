@@ -25,7 +25,7 @@ function QuickChange(appId, jsKey, options) {
           "<a class='submit' href='#'>submit</a>" +
         "</form>" +
       "</div>"),
-      $editable: $('[data-cms]'),
+      $dataCms: $('[data-cms]'),
     },
 
     contents: [],
@@ -49,7 +49,7 @@ function QuickChange(appId, jsKey, options) {
 
     activateElems: function() {
       var qc = this;
-      this.elems.$editable.each(function() {
+      this.elems.$dataCms.each(function() {
         var content = new Content({
           qc: qc,
           currentUser: qc.currentUser,
@@ -141,7 +141,7 @@ function QuickChange(appId, jsKey, options) {
     },
 
     toggleEditable: function(isEditable) {
-      this.elems.$editable.attr('contentEditable', isEditable);
+      this.elems.$dataCms.attr('contentEditable', isEditable);
     },
 
     setupBodyClickHandler: function() {
@@ -351,6 +351,11 @@ function QuickChange(appId, jsKey, options) {
 
     setId: function() {
       this.id = this.elem.data('cms');
+    },
+
+    setPending: function() {
+      this.isPending = true;
+      this.changeToPendingStyle();
     },
 
     setupSaveOnBlur: function() {

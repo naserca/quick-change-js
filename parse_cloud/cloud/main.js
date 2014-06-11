@@ -3,4 +3,10 @@
 var QuickChangeCloud = require('cloud/quick-change-cloud');
 var Config           = require('cloud/config');
 
-QuickChangeCloud.init(Config.ownerCode);
+Parse.Cloud.beforeSave(Parse.User, function(req, res) {
+  QuickChangeCloud.checkOwnerCode(req, res, Config.ownerCode);
+});
+
+Parse.Cloud.afterSave(Parse.User, function(req, res) {
+  QuickChangeCloud.checkForFirstUser(req, res);
+});

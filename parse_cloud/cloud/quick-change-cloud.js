@@ -1,21 +1,38 @@
 module.exports = {
   version: '0.0.1',
 
-  init: function(ownerCode) {
-    this.setupOwnerCodeValidation(ownerCode);
+  checkOwnerCode: function(req, res, ownerCode) {
+    var user = req.object;
+    
+    if (user.get("ownerCode") != ownerCode) {
+      res.error("We're sorry, you must be an owner to edit this site.");
+    } else {
+      // delete the ownerCode so it stays hidden from client
+      user.unset("ownerCode");
+      res.success();
+    }
   },
 
-  setupOwnerCodeValidation: function(ownerCode) {
-    Parse.Cloud.beforeSave(Parse.User, function(request, response) {
-      var user = request.object;
-      
-      if (user.get("ownerCode") != ownerCode) {
-        response.error("We're sorry, you must be an owner to edit this site.");
+  checkForFirstUser: function(req, res) {
+    var user = req.object;
+
+    var query = new Parse.Query(Parse.User);
+    query.find().then(function(users) {
+      if (users.length <= 1) {
+
+        // create admin role
+        var roleACL = new Parse.ACL();
+        roleACL.setPublicReadAccess(true);
+        var role = new Parse.Role('Admin', roleACL);
+
+        // add user to role
+        role.getUsers().add(user);
+
+        // save role
+        return role.save().then(res.success);
       } else {
-        // delete the ownerCode so it stays hidden from client
-        user.unset("ownerCode");
-        response.success();
+        res.success();
       }
     });
-  }
+  },
 }

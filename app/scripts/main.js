@@ -40,6 +40,7 @@ function QuickChange(appId, jsKey, options) {
       if (!!this.currentUser) {
         this.toggleEditable(true);
         this.setupLogout();
+        this.getCurrentUserRole();
       } else {
         this.setupSignupOrLogin();
       }
@@ -82,6 +83,15 @@ function QuickChange(appId, jsKey, options) {
       this.elems.$modal.$password  = this.elems.$modal.find('[name=password]');
       this.elems.$modal.$ownerCode = this.elems.$modal.find('[name=owner-code]');
       this.elems.$modal.$submit    = this.elems.$modal.find('.submit');
+    },
+
+    getCurrentUserRole: function() {
+      var qc = this;
+      var query = new Parse.Query(Parse.Role);
+      query.equalTo('users', this.currentUser).first().then(function(role) {
+        var isAdmin = (role.getName() == 'Admin');
+        qc.currentUser.set('isAdmin', isAdmin);
+      });
     },
 
     handleLoginError: function(user, error) {

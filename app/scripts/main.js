@@ -194,10 +194,11 @@ function QuickChange(appId, jsKey, options) {
     setupSignupOrLogin: function() {
       if (this.loginOrSignupTriggered()) {
         this.addModal();
-        if (this.signupTriggered())
+        if (this.signupTriggered()) {
           this.setupSignup();
-        else if (this.loginTriggered())
+        } else if (this.loginTriggered()) {
           this.setupLogin();
+        }
       }
     },
 

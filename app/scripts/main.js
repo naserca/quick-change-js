@@ -29,6 +29,7 @@ function QuickChange(appId, jsKey, options) {
     },
 
     contents: [],
+    users: [],
 
     ////////// init
 
@@ -37,6 +38,7 @@ function QuickChange(appId, jsKey, options) {
       this.insertStyleTag();
       this.activateElems();
       this.currentUser = Parse.User.current();
+      this.findAllUsers();
       if (!!this.currentUser) {
         this.toggleEditable(true);
         this.setupLogout();
@@ -78,6 +80,11 @@ function QuickChange(appId, jsKey, options) {
       this.elems.$modal.fadeOut(this.clearUrlTrigger.bind(this));
     },
 
+    findAllUsers: function(ev) {
+      var query = new Parse.Query(Parse.User);
+      query.find().then(this.setUsers.bind(this));
+    },
+
     findModalElems: function() {
       this.elems.$modal.$username  = this.elems.$modal.find('[name=username]');
       this.elems.$modal.$password  = this.elems.$modal.find('[name=password]');
@@ -112,6 +119,8 @@ function QuickChange(appId, jsKey, options) {
       this.currentUser = user;
       this.elems.$modal.fadeOut(this.elems.$modal.remove);
       this.toggleEditable(true);
+
+      // will refresh page!
       this.clearUrlTrigger();
     },
 
@@ -152,6 +161,10 @@ function QuickChange(appId, jsKey, options) {
 
     toggleEditable: function(isEditable) {
       this.elems.$dataCms.attr('contentEditable', isEditable);
+    },
+
+    setUsers: function(parseResults) {
+      this.users.push(parseResults);
     },
 
     setupBodyClickHandler: function() {

@@ -7,31 +7,45 @@ module.exports = {
     if (user.get("ownerCode") != ownerCode) {
       res.error("We're sorry, you must be an owner to edit this site.");
     } else {
+
       // delete the ownerCode so it stays hidden from client
       user.unset("ownerCode");
       res.success();
     }
   },
 
-  checkForFirstUser: function(req, res) {
+  checkForFirstUser: function(req) {
+    Parse.Cloud.useMasterKey();
+
     var user = req.object;
 
-    var query = new Parse.Query(Parse.User);
-    query.find().then(function(users) {
+    // set up access for use with role
+    var roleACL = new Parse.ACL();
+    roleACL.setPublicReadAccess(true);
+
+    var userQuery = new Parse.Query(Parse.User);
+    userQuery.find().then(function(users) {
+
+      // if first user, auto assign them as admin
       if (users.length <= 1) {
+        var adminRole = new Parse.Role('Admin', roleACL); // create admin role
+        adminRole.getUsers().add(user);                   // add user to role
+        return adminRole.save();                          // save role
 
-        // create admin role
-        var roleACL = new Parse.ACL();
-        roleACL.setPublicReadAccess(true);
-        var role = new Parse.Role('Admin', roleACL);
-
-        // add user to role
-        role.getUsers().add(user);
-
-        // save role
-        return role.save().then(res.success);
+      // if not first user, auto assign them as editor
       } else {
-        res.success();
+        var editorRoleQuery = new Parse.Query(Parse.Role);
+        editorRoleQuery.equalTo('name', 'Editor');
+        editorRoleQuery.first().then(function(editorRole) {
+
+          // if editor role doesn't exist, create it
+          if (!editorRole) {
+            editorRole = new Parse.Role('Editor', roleACL);
+          }
+
+          editorRole.getUsers().add(user);
+          return editorRole.save();
+        });
       }
     });
   },

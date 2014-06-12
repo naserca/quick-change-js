@@ -93,12 +93,8 @@ function QuickChange(appId, jsKey, options) {
     },
 
     getCurrentUserRole: function() {
-      var qc = this;
       var query = new Parse.Query(Parse.Role);
-      query.equalTo('users', this.currentUser).first().then(function(role) {
-        var isAdmin = (role.getName() == 'Admin');
-        qc.currentUser.set('isAdmin', isAdmin);
-      });
+      query.equalTo('users', this.currentUser).first().then(this.setIsAdmin.bind(this));
     },
 
     handleLoginError: function(user, error) {
@@ -161,6 +157,11 @@ function QuickChange(appId, jsKey, options) {
 
     toggleEditable: function(isEditable) {
       this.elems.$dataCms.attr('contentEditable', isEditable);
+    },
+
+    setIsAdmin: function(role) {
+      var isAdmin = (role.getName() == 'Admin');
+      this.currentUser.set('isAdmin', isAdmin);
     },
 
     setUsers: function(parseResults) {

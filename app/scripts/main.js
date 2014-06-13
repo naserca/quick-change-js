@@ -5,6 +5,7 @@ function QuickChange(appId, jsKey, options) {
 (function (window, document) {
 
   DBContent = Parse.Object.extend("Content");
+  DBLocale  = Parse.Object.extend("Locale");
   QuickChange.prototype = {
 
     ////////// defaults
@@ -27,6 +28,7 @@ function QuickChange(appId, jsKey, options) {
         "</form>" +
       "</div>"),
       $dataCms: $('[data-cms]'),
+      $locales: $('[data-cms-locale]')
     },
 
     contents: [],
@@ -47,6 +49,7 @@ function QuickChange(appId, jsKey, options) {
       } else {
         this.setupSignupOrLogin();
       }
+      this.getLocales();
     },
 
     ////////// methods
@@ -77,6 +80,17 @@ function QuickChange(appId, jsKey, options) {
       return window.location.replace(cleanUrl);
     },
 
+    createLocales: function(localeArray) {
+      var locales = [];
+      for (var i = localeArray.length - 1; i >= 0; i--) {
+        var locale = new Locale({
+          dbObject: localeArray[i]
+        });
+        locales.push(locale);
+      };
+      return locales;
+    },
+
     handleBodyClick: function(ev) {
       this.elems.$modal.fadeOut(this.clearUrlTrigger.bind(this));
     },
@@ -96,6 +110,10 @@ function QuickChange(appId, jsKey, options) {
     getCurrentUserRole: function() {
       var query = new Parse.Query(Parse.Role);
       query.equalTo('users', this.currentUser).first().then(this.setIsAdmin.bind(this));
+    },
+
+    getLocales: function() {
+      Parse.Cloud.run('getLocales').then(this.createLocales.bind(this));
     },
 
     handleLoginError: function(user, error) {
@@ -392,6 +410,17 @@ function QuickChange(appId, jsKey, options) {
       this.elem.css('display', '');
     },
 
+  };
+
+  ////////// locale //////////
+
+  function Locale(args) {
+    this.dbObject = args.dbObject;
+    debugger
   }
+
+  Locale.prototype = {
+
+  };
 
 }(window, document));

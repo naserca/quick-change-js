@@ -49,4 +49,11 @@ module.exports = {
       }
     });
   },
+
+  getLocales: function(req, res) {
+    var localeStrings = req.params.localeStrings;
+    var localeQuery = new Parse.Query('Locale');
+    localeQuery.find().then(function(locales) { res.success(locales) });
+  },
+
 }

@@ -4,8 +4,9 @@ function QuickChange(appId, jsKey, options) {
 
 (function (window, document) {
 
-  DBContent = Parse.Object.extend("Content");
-  DBLocale  = Parse.Object.extend("Locale");
+  var DBContent = Parse.Object.extend("Content");
+  var DBLocale  = Parse.Object.extend("Locale");
+
   QuickChange.prototype = {
 
     ////////// defaults
@@ -31,6 +32,7 @@ function QuickChange(appId, jsKey, options) {
       $locales: $('[data-cms-locale]')
     },
 
+    locales: [],
     contents: [],
     users: [],
 
@@ -81,14 +83,17 @@ function QuickChange(appId, jsKey, options) {
     },
 
     createLocales: function(localeArray) {
-      var locales = [];
       for (var i = localeArray.length - 1; i >= 0; i--) {
         var locale = new Locale({
           dbObject: localeArray[i]
         });
-        locales.push(locale);
+        this.locales.push(locale);
       };
-      return locales;
+    },
+
+    handleLocales: function(localeArray) {
+      this.createLocales(localeArray);
+      this.setCurrentLocale();
     },
 
     handleBodyClick: function(ev) {
@@ -113,7 +118,7 @@ function QuickChange(appId, jsKey, options) {
     },
 
     getLocales: function() {
-      Parse.Cloud.run('getLocales').then(this.createLocales.bind(this));
+      Parse.Cloud.run('getLocales').then(this.handleLocales.bind(this));
     },
 
     handleLoginError: function(user, error) {
@@ -176,6 +181,18 @@ function QuickChange(appId, jsKey, options) {
 
     toggleEditable: function(isEditable) {
       this.elems.$dataCms.attr('contentEditable', isEditable);
+    },
+
+    setCurrentLocale: function(locale) {
+      if (!!locale) {
+        return this.currentLocale = locale;
+      } else {
+        for (var i = this.locales.length - 1; i >= 0; i--) {
+          if (this.locales[i].dbObject.get('isDefault')) {
+            return this.currentLocale = this.locales[i];
+          }
+        }
+      }
     },
 
     setIsAdmin: function(role) {
@@ -416,7 +433,6 @@ function QuickChange(appId, jsKey, options) {
 
   function Locale(args) {
     this.dbObject = args.dbObject;
-    debugger
   }
 
   Locale.prototype = {

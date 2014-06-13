@@ -4,6 +4,7 @@ function QuickChange(appId, jsKey, options) {
 
 (function (window, document) {
 
+  DBContent = Parse.Object.extend("Content");
   QuickChange.prototype = {
 
     ////////// defaults
@@ -288,7 +289,7 @@ function QuickChange(appId, jsKey, options) {
       return $(styleTag);
     }
 
-  }
+  };
 
   // represent single editable elems
 
@@ -297,16 +298,11 @@ function QuickChange(appId, jsKey, options) {
     this.elem = args.elem;
     this.initCss();
     this.setId();
-    this.setQuery();
-    this.findAndSyncFromDb();
+    this.findFromDb();
     this.setupSaveOnBlur();
   }
 
   Content.prototype = {
-
-    ////////// defaults
-
-    DBContent: Parse.Object.extend("Content"),
 
     ////////// methods
 
@@ -319,7 +315,7 @@ function QuickChange(appId, jsKey, options) {
     },
 
     createDbObject: function() {
-      var dbObject = new this.DBContent();
+      var dbObject = new DBContent();
       dbObject.save({
         contentId: this.id,
         html: this.elem.html(),
@@ -328,12 +324,10 @@ function QuickChange(appId, jsKey, options) {
       return dbObject;
     },
 
-    findAndSyncFromDb: function() {
-      this.findFromDb().then(this.syncFromDb.bind(this));
-    },
-
     findFromDb: function() {
-      return this.query.first();
+      var query = new Parse.Query(DBContent);
+      query.equalTo('contentId', this.id);
+      query.first().then(this.syncFromDb.bind(this));
     },
 
     initCss: function() {
@@ -385,11 +379,6 @@ function QuickChange(appId, jsKey, options) {
 
     setupSaveOnBlur: function() {
       this.elem.blur(this.saveToDb.bind(this));
-    },
-
-    setQuery: function() {
-      this.query = new Parse.Query(this.DBContent);
-      this.query.equalTo('contentId', this.id);
     },
 
     syncFromDb: function(dbObject) {

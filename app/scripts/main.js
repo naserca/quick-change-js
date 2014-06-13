@@ -360,9 +360,12 @@ function QuickChange(appId, jsKey, options) {
     },
 
     findFromDb: function() {
-      var query = new Parse.Query(DBContent);
-      query.equalTo('contentId', this.id);
-      query.first().then(this.syncFromDb.bind(this));
+      Parse.Cloud.run('findOrCreateContent', {
+        contentId: this.id,
+        html: this.elem.html()
+      }).then(function(content) {
+        debugger
+      });
     },
 
     initCss: function() {

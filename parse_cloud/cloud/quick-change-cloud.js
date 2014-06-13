@@ -1,6 +1,10 @@
 module.exports = {
   version: '0.0.1',
 
+  // db types
+
+  Content: Parse.Object.extend('Content'),
+
   checkOwnerCode: function(req, res, ownerCode) {
     var user = req.object;
     
@@ -48,6 +52,35 @@ module.exports = {
         });
       }
     });
+  },
+
+  createContent: function(args) {
+    var content = new this.Content();
+    return content.save({
+      contentId: args.contentId,
+      html: args.html
+    });
+  },
+
+  findOrCreateContent: function(req, res) {
+    var module    = this,
+        contentId = req.params.contentId,
+        html      = req.params.html;
+
+    var query = new Parse.Query('Content');
+    query.equalTo('contentId', contentId);
+    query.first().then(function(existingContent) {
+      if (!!existingContent) {
+        res.success(existingContent);
+      } else {
+        module.createContent({
+          contentId: contentId,
+          html: html
+        }).then(function(newContent) {
+          res.success(newContent)
+        });
+      }
+    })
   },
 
   getLocales: function(req, res) {

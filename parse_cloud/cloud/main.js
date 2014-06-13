@@ -16,3 +16,7 @@ Parse.Cloud.afterSave(Parse.User, function(req, res) {
 Parse.Cloud.define('getLocales', function(req, res) {
   QuickChangeCloud.getLocales(req, res);
 });
+
+Parse.Cloud.define('findOrCreateContent', function(req, res) {
+  QuickChangeCloud.findOrCreateContent(req, res);
+});

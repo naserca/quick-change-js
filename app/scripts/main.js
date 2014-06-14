@@ -6,6 +6,7 @@ function QuickChange(appId, jsKey, options) {
 
   var DBContent = Parse.Object.extend("Content");
   var DBLocale  = Parse.Object.extend("Locale");
+  var DBEdit    = Parse.Object.extend("Edit");
 
   QuickChange.prototype = {
 
@@ -359,13 +360,28 @@ function QuickChange(appId, jsKey, options) {
       return dbObject;
     },
 
+    findEditToDisplay: function(content) {
+      var edits = content.get('edits')
+      var Collection = Parse.Collection.extend({
+        model: DBEdit,
+        comparator: function(model) {
+          return -model.createdAt.getTime();
+        },
+      });
+      var collection = new Collection(edits);
+      var liveEdit = collection.find(function(edit) { return edit.get('isLive') });
+      var lastEdit = collection.models[0];
+    },
+
+    handleContentFromDb: function(content) {
+      this.findEditToDisplay(content);
+    },
+
     findFromDb: function() {
       Parse.Cloud.run('findOrCreateContent', {
         contentId: this.id,
         html: this.elem.html()
-      }).then(function(content) {
-        debugger
-      });
+      }).then(this.handleContentFromDb.bind(this));
     },
 
     initCss: function() {
@@ -417,18 +433,7 @@ function QuickChange(appId, jsKey, options) {
 
     setupSaveOnBlur: function() {
       this.elem.blur(this.saveToDb.bind(this));
-    },
-
-    syncFromDb: function(dbObject) {
-      if (!!dbObject) {
-        // load already-saved content into appropriate place
-        this.loadFromDb(dbObject);
-      } else {
-        // first instance of the content. save it to the DB
-        this.dbObject = this.createDbObject();
-      }
-      this.elem.css('display', '');
-    },
+    }
 
   };
 

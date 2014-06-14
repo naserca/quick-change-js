@@ -4,7 +4,7 @@ module.exports = {
   // db object types
 
   Content: Parse.Object.extend('Content'),
-  Edit:    Parse.Object.extend('Edit');
+  Edit:    Parse.Object.extend('Edit'),
 
   checkOwnerCode: function(req, res, ownerCode) {
     var user = req.object;

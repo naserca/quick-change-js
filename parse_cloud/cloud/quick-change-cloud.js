@@ -1,9 +1,10 @@
 module.exports = {
   version: '0.0.1',
 
-  // db types
+  // db object types
 
   Content: Parse.Object.extend('Content'),
+  Edit:    Parse.Object.extend('Edit');
 
   checkOwnerCode: function(req, res, ownerCode) {
     var user = req.object;
@@ -77,10 +78,24 @@ module.exports = {
           contentId: contentId,
           html: html
         }).then(function(newContent) {
-          res.success(newContent)
+          return module.createFirstEdit({
+            content: newContent
+          })
+        }).then(function(newContentWithFirstEdit) {
+          return res.success(newContentWithFirstEdit);
         });
       }
     })
+  },
+
+  createFirstEdit: function(args) {
+    var edit = new this.Edit();
+    return edit.save({
+      html: args.content.get('html'),
+      user: null
+    }).then(function(edit) {
+      return args.content.save('edits', [edit]);
+    });
   },
 
   getLocales: function(req, res) {

@@ -69,7 +69,7 @@ module.exports = {
         html      = req.params.html;
 
     var query = new Parse.Query('Content');
-    query.equalTo('contentId', contentId);
+    query.equalTo('contentId', contentId).include('edits');
     query.first().then(function(existingContent) {
       if (!!existingContent) {
         res.success(existingContent);

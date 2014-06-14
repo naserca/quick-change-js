@@ -92,7 +92,8 @@ module.exports = {
     var edit = new this.Edit();
     return edit.save({
       html: args.content.get('html'),
-      user: null
+      user: null,
+      isLive: true
     }).then(function(edit) {
       return args.content.save('edits', [edit]);
     });

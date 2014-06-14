@@ -49,6 +49,7 @@ function QuickChange(appId, jsKey, options) {
         this.toggleEditable(true);
         this.setupLogout();
         this.getCurrentUserRole();
+        this.displayPending = true;
       } else {
         this.setupSignupOrLogin();
       }
@@ -115,7 +116,7 @@ function QuickChange(appId, jsKey, options) {
 
     getCurrentUserRole: function() {
       var query = new Parse.Query(Parse.Role);
-      query.equalTo('users', this.currentUser).first().then(this.setIsAdmin.bind(this));
+      query.equalTo('users', this.currentUser).first().then(this.handleUserRole.bind(this));
     },
 
     getLocales: function() {
@@ -196,9 +197,8 @@ function QuickChange(appId, jsKey, options) {
       }
     },
 
-    setIsAdmin: function(role) {
-      var isAdmin = (role.getName() == 'Admin');
-      this.currentUser.set('isAdmin', isAdmin);
+    handleUserRole: function(role) {
+      this.currentUser.set('isAdmin', (role.getName() == 'Admin'));
     },
 
     setUsers: function(parseResults) {
@@ -330,8 +330,9 @@ function QuickChange(appId, jsKey, options) {
   // represent single editable elems
 
   function Content(args) {
-    this.qc   = args.qc;
-    this.elem = args.elem;
+    this.qc    = args.qc;
+    this.elem  = args.elem;
+    this.edits = [];
     this.initCss();
     this.setId();
     this.findFromDb();
@@ -360,21 +361,44 @@ function QuickChange(appId, jsKey, options) {
       return dbObject;
     },
 
-    findEditToDisplay: function(content) {
-      var edits = content.get('edits')
+    setEdits: function() {
+      var edits      = this.dbObject.get('edits')
       var Collection = Parse.Collection.extend({
         model: DBEdit,
         comparator: function(model) {
           return -model.createdAt.getTime();
         },
       });
-      var collection = new Collection(edits);
-      var liveEdit = collection.find(function(edit) { return edit.get('isLive') });
-      var lastEdit = collection.models[0];
+      this.edits = new Collection(edits);
+      return this.edits;
     },
 
-    handleContentFromDb: function(content) {
-      this.findEditToDisplay(content);
+    setLiveEdit: function() {
+      this.liveEdit = this.edits.find(function(edit) { return edit.get('isLive') });
+      return this.liveEdit;
+    },
+
+    setLastEdit: function() {
+      this.lastEdit = this.edits.models[0];
+      return this.lastEdit;
+    },
+
+    displayEdit: function() {
+      var edit = (this.qc.displayPending) ? (this.lastEdit) : (this.liveEdit);
+      this.elem.html(edit.get('html'));
+      this.elem.css({ display: '' });
+    },
+
+    handleContentFromDb: function(dbObject) {
+      this.dbObject = dbObject;
+      this.setEdits();
+      this.setLiveEdit();
+      this.setLastEdit();
+      this.displayEdit();
+    },
+
+    displayEdits: function() {
+      (!!this.qc.currentUser && this.pendingHtmlIsInDb())
     },
 
     findFromDb: function() {
@@ -388,24 +412,6 @@ function QuickChange(appId, jsKey, options) {
       this.elem.css({
         display: 'none',
       });
-    },
-
-    loadFromDb: function(dbObject) {
-      this.dbObject = dbObject;
-      this.isPending = (!!this.qc.currentUser && this.pendingHtmlIsInDb());
-      var html;
-      if (this.isPending) {
-        html = this.dbObject.get('pendingHtml');
-        this.changeToPendingStyle();
-      } else {
-        html = this.dbObject.get('html');
-        this.changeToLiveStyle();
-      }
-      this.elem.html(html);
-    },
-
-    pendingHtmlIsInDb: function() {
-      return (this.dbObject.get('pendingHtml') != '');
     },
 
     saveToDb: function() {
@@ -424,11 +430,6 @@ function QuickChange(appId, jsKey, options) {
 
     setId: function() {
       this.id = this.elem.data('cms');
-    },
-
-    setPending: function() {
-      this.isPending = true;
-      this.changeToPendingStyle();
     },
 
     setupSaveOnBlur: function() {

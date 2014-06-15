@@ -42,7 +42,6 @@ function QuickChange(appId, jsKey, options) {
     init: function(appId, jsKey, options) {
       Parse.initialize(appId, jsKey);
       this.insertStyleTag();
-      this.activateElems();
       this.currentUser = Parse.User.current();
       this.findAllUsers();
       if (!!this.currentUser) {
@@ -96,6 +95,7 @@ function QuickChange(appId, jsKey, options) {
     handleLocales: function(localeArray) {
       this.createLocales(localeArray);
       this.setCurrentLocale();
+      this.activateElems();
     },
 
     handleBodyClick: function(ev) {
@@ -351,16 +351,6 @@ function QuickChange(appId, jsKey, options) {
       return this.elem.css('background-color', '#ffcbaa');
     },
 
-    createDbObject: function() {
-      var dbObject = new DBContent();
-      dbObject.save({
-        contentId: this.id,
-        html: this.elem.html(),
-        pendingHtml: ''
-      });
-      return dbObject;
-    },
-
     setEdits: function() {
       var edits      = this.dbObject.get('edits')
       var Collection = Parse.Collection.extend({
@@ -404,7 +394,8 @@ function QuickChange(appId, jsKey, options) {
     findFromDb: function() {
       Parse.Cloud.run('findOrCreateContent', {
         contentId: this.id,
-        html: this.elem.html()
+        html: this.elem.html(),
+        localeId: this.qc.currentLocale.dbObject.id
       }).then(this.handleContentFromDb.bind(this));
     },
 

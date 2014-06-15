@@ -5,6 +5,7 @@ module.exports = {
 
   Content: Parse.Object.extend('Content'),
   Edit:    Parse.Object.extend('Edit'),
+  Locale:  Parse.Object.extend("Locale"),
 
   checkOwnerCode: function(req, res, ownerCode) {
     var user = req.object;
@@ -59,24 +60,30 @@ module.exports = {
     var content = new this.Content();
     return content.save({
       contentId: args.contentId,
-      html: args.html
+      html: args.html,
+      locale: args.locale
     });
   },
 
   findOrCreateContent: function(req, res) {
     var module    = this,
         contentId = req.params.contentId,
-        html      = req.params.html;
+        html      = req.params.html,
+        localeId  = req.params.localeId;
+
+    var locale = new this.Locale();
+    locale.id = localeId;
 
     var query = new Parse.Query('Content');
-    query.equalTo('contentId', contentId).include('edits');
+    query.equalTo('contentId', contentId).equalTo('locale', locale).include('edits');
     query.first().then(function(existingContent) {
       if (!!existingContent) {
         res.success(existingContent);
       } else {
         module.createContent({
           contentId: contentId,
-          html: html
+          html: html,
+          locale: locale
         }).then(function(newContent) {
           return module.createFirstEdit({
             content: newContent

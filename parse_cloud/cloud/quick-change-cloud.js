@@ -71,11 +71,15 @@ module.exports = {
         html      = req.params.html,
         localeId  = req.params.localeId;
 
+    // must instantiate new Locale() to query (#smdh)
     var locale = new this.Locale();
     locale.id = localeId;
 
     var query = new Parse.Query('Content');
-    query.equalTo('contentId', contentId).equalTo('locale', locale).include('edits');
+    query.equalTo('contentId', contentId)
+         .equalTo('locale', locale)
+         .include('edits');
+         
     query.first().then(function(existingContent) {
       if (!!existingContent) {
         res.success(existingContent);

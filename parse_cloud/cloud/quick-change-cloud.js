@@ -5,17 +5,17 @@ module.exports = {
 
   Content: Parse.Object.extend('Content'),
   Edit:    Parse.Object.extend('Edit'),
-  Locale:  Parse.Object.extend("Locale"),
+  Locale:  Parse.Object.extend('Locale'),
 
   beforeSaveUser: function(req, res, ownerCode) {
     var user = req.object;
     
-    if (user.get("ownerCode") != ownerCode) {
+    if (user.get('ownerCode') != ownerCode) {
       res.error("We're sorry, you must be an owner to edit this site.");
     } else {
 
       // delete the ownerCode so it stays hidden from client
-      user.unset("ownerCode");
+      user.unset('ownerCode');
       res.success();
     }
   },
@@ -97,7 +97,6 @@ module.exports = {
     query.equalTo('contentId', contentId)
          .equalTo('locale', locale)
          .include('edits');
-         
     query.first().then(function(existingContent) {
       if (!!existingContent) {
         res.success(existingContent);

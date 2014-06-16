@@ -31,8 +31,7 @@ function QuickChange(appId, jsKey, options) {
           "<a class='submit' href='#'>submit</a>" +
         "</form>" +
       "</div>"),
-      $dataCms: $('[data-cms]'),
-      $locales: $('[data-cms-locale]')
+      $dataCms: $('[data-cms]')
     },
 
     locales: [],
@@ -105,11 +104,6 @@ function QuickChange(appId, jsKey, options) {
 
     handleBodyClick: function(ev) {
       this.elems.$modal.fadeOut(this.clearUrlTrigger.bind(this));
-    },
-
-    findAllUsers: function(ev) {
-      var query = new Parse.Query(Parse.User);
-      query.find().then(this.setUsers.bind(this));
     },
 
     findModalElems: function() {

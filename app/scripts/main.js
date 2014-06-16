@@ -13,6 +13,7 @@ function QuickChange(appId, jsKey, options) {
     ////////// defaults
 
     urlTriggerRes: {
+      init:   /#qcinit/,
       signup: /#qcsignup/,
       login:  /#qclogin/,
       logout: /#qclogout/
@@ -25,7 +26,8 @@ function QuickChange(appId, jsKey, options) {
         "<form>" +
           "<input name='username' type='text' placeholder='username' />" +
           "<input name='password' type='password' placeholder='password' />" +
-          "<input name='owner-code' type='password' placeholder='owner-code' />" +
+          "<input name='owner-code' type='password' placeholder='owner code' />" +
+          "<input name='default-language' type='text' placeholder='default language' />" +
           "<a class='submit' href='#'>submit</a>" +
         "</form>" +
       "</div>"),
@@ -41,18 +43,21 @@ function QuickChange(appId, jsKey, options) {
 
     init: function(appId, jsKey, options) {
       Parse.initialize(appId, jsKey);
-      this.insertStyleTag();
-      this.currentUser = Parse.User.current();
-      this.findAllUsers();
-      if (!!this.currentUser) {
-        this.toggleEditable(true);
-        this.setupLogout();
-        this.getCurrentUserRole();
-        this.displayPending = true;
-      } else {
-        this.setupSignupOrLogin();
+      Parse.Cloud.run('checkQcInit').then(this.go.bind(this));
+    },
+
+    go: function(isInit) {
+      if (isInit) {
+        if (!!this.currentUser) {
+          this.toggleEditable(true);
+          this.setupLogout();
+          this.getCurrentUserRole();
+          this.displayPending = true;
+        }
+        this.getLocales();
       }
-      this.getLocales();
+      this.insertStyleTag();
+      this.setupUserActions();
     },
 
     ////////// methods
@@ -78,7 +83,7 @@ function QuickChange(appId, jsKey, options) {
 
     clearUrlTrigger: function() {
       var url = document.URL;
-      var trigger = url.match(this.urlTriggerRes.login) || url.match(this.urlTriggerRes.signup) || url.match(this.urlTriggerRes.logout);
+      var trigger = url.match(this.urlTriggerRes.init) || url.match(this.urlTriggerRes.login) || url.match(this.urlTriggerRes.signup) || url.match(this.urlTriggerRes.logout);
       var cleanUrl = url.replace(trigger[0], '');
       return window.location.replace(cleanUrl);
     },
@@ -108,10 +113,11 @@ function QuickChange(appId, jsKey, options) {
     },
 
     findModalElems: function() {
-      this.elems.$modal.$username  = this.elems.$modal.find('[name=username]');
-      this.elems.$modal.$password  = this.elems.$modal.find('[name=password]');
-      this.elems.$modal.$ownerCode = this.elems.$modal.find('[name=owner-code]');
-      this.elems.$modal.$submit    = this.elems.$modal.find('.submit');
+      this.elems.$modal.$username        = this.elems.$modal.find('[name=username]');
+      this.elems.$modal.$password        = this.elems.$modal.find('[name=password]');
+      this.elems.$modal.$ownerCode       = this.elems.$modal.find('[name=owner-code]');
+      this.elems.$modal.$defaultLanguage = this.elems.$modal.find('[name=default-language]');
+      this.elems.$modal.$submit          = this.elems.$modal.find('.submit');
     },
 
     getCurrentUserRole: function() {
@@ -151,13 +157,14 @@ function QuickChange(appId, jsKey, options) {
       alert(error.message);
     },
 
-    handleSignupSubmit: function(ev) {
+    handleInitOrSignupSubmit: function(ev) {
       ev.preventDefault();
 
       var user = new Parse.User();
       user.set("username", this.elems.$modal.$username.val());
       user.set("password", this.elems.$modal.$password.val());
       user.set("ownerCode", this.elems.$modal.$ownerCode.val());
+      user.set("defaultLanguage", this.elems.$modal.$defaultLanguage.val());
 
       user.signUp(null, {
         success: this.handleLoginOrSignupSuccess.bind(this),
@@ -169,8 +176,8 @@ function QuickChange(appId, jsKey, options) {
       this.elems.$head.append(this.$style());
     },
 
-    loginOrSignupTriggered: function() {
-      return (this.signupTriggered()) || (this.loginTriggered());
+    userActionTriggered: function() {
+      return (this.initTriggered() || this.signupTriggered()) || (this.loginTriggered());
     },
 
     loginTriggered: function() {
@@ -214,7 +221,12 @@ function QuickChange(appId, jsKey, options) {
 
     setupLogin: function() {
       this.elems.$modal.$ownerCode.remove();
+      this.elems.$modal.$defaultLocale.remove();
       this.elems.$modal.$submit.click(this.handleLoginSubmit.bind(this));
+    },
+
+    setupInit: function() {
+      this.elems.$modal.$submit.click(this.handleInitOrSignupSubmit.bind(this));
     },
 
     setupLogout: function() {
@@ -226,13 +238,16 @@ function QuickChange(appId, jsKey, options) {
     },
 
     setupSignup: function() {
-      this.elems.$modal.$submit.click(this.handleSignupSubmit.bind(this));
+      this.elems.$modal.$defaultLocale.remove();
+      this.elems.$modal.$submit.click(this.handleInitOrSignupSubmit.bind(this));
     },
 
-    setupSignupOrLogin: function() {
-      if (this.loginOrSignupTriggered()) {
+    setupUserActions: function() {
+      if (this.userActionTriggered()) {
         this.addModal();
-        if (this.signupTriggered()) {
+        if (this.initTriggered()) {
+          this.setupInit();
+        } else if (this.signupTriggered()) {
           this.setupSignup();
         } else if (this.loginTriggered()) {
           this.setupLogin();
@@ -242,6 +257,10 @@ function QuickChange(appId, jsKey, options) {
 
     signupTriggered: function() {
       return this.urlTriggerRes.signup.test(document.URL);
+    },
+
+    initTriggered: function() {
+      return this.urlTriggerRes.init.test(document.URL);
     },
 
     ////////// style tag
@@ -285,9 +304,9 @@ function QuickChange(appId, jsKey, options) {
           "position: fixed;" +
           "left: 50%;" +
           "top: 50%;" +
-          "height: 200px;" +
+          "height: 230px;" +
           "width: 300px;" +
-          "margin-top: -100px;" +
+          "margin-top: -115px;" +
           "margin-left: -150px;" +
           "background-color: #2d2d2d;" +
           "padding: 1em;" +

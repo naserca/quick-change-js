@@ -7,7 +7,7 @@ module.exports = {
   Edit:    Parse.Object.extend('Edit'),
   Locale:  Parse.Object.extend("Locale"),
 
-  checkOwnerCode: function(req, res, ownerCode) {
+  beforeSaveUser: function(req, res, ownerCode) {
     var user = req.object;
     
     if (user.get("ownerCode") != ownerCode) {
@@ -20,8 +20,22 @@ module.exports = {
     }
   },
 
-  checkForFirstUser: function(req) {
+  checkQcInit: function(req, res) {
+    var query = new Parse.Query(Parse.User);
+    query.find().then(function(users) {
+      return res.success(!!users.length);
+    });
+  },
+
+  createRole: function(args) {
+    var role = new Parse.Role(args.name, args.roleACL); // create admin role
+    role.getUsers().add(args.user);                     // add user to role
+    return role.save();                                 // save role
+  },
+
+  afterSaveUser: function(req) {
     Parse.Cloud.useMasterKey();
+    var module = this;
 
     var user = req.object;
 
@@ -34,9 +48,13 @@ module.exports = {
 
       // if first user, auto assign them as admin
       if (users.length <= 1) {
-        var adminRole = new Parse.Role('Admin', roleACL); // create admin role
-        adminRole.getUsers().add(user);                   // add user to role
-        return adminRole.save();                          // save role
+        module.createRole({
+          roleACL: roleACL,
+          user: user,
+          name: 'Admin'
+        }).then(function() {
+          module.createDefaultLocale(user);
+        });
 
       // if not first user, auto assign them as editor
       } else {
@@ -116,4 +134,12 @@ module.exports = {
     localeQuery.find().then(function(locales) { res.success(locales) });
   },
 
+  createDefaultLocale: function(user) {
+    console.log(user);
+    var locale = new this.Locale();
+    return locale.save({
+      name: user.get('defaultLanguage'),
+      isDefault: true
+    });
+  }
 }

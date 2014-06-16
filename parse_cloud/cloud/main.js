@@ -6,11 +6,15 @@ var QuickChangeCloud = require('cloud/quick-change-cloud');
 ////////// user //////////
 
 Parse.Cloud.beforeSave(Parse.User, function(req, res) {
-  QuickChangeCloud.checkOwnerCode(req, res, Config.ownerCode);
+  QuickChangeCloud.beforeSaveUser(req, res, Config.ownerCode);
 });
 
 Parse.Cloud.afterSave(Parse.User, function(req, res) {
-  QuickChangeCloud.checkForFirstUser(req, res);
+  QuickChangeCloud.afterSaveUser(req, res);
+});
+
+Parse.Cloud.define('checkQcInit', function(req, res) {
+  QuickChangeCloud.checkQcInit(req, res);
 });
 
 Parse.Cloud.define('getLocales', function(req, res) {

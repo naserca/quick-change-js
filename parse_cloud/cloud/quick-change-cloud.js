@@ -7,6 +7,13 @@ module.exports = {
   Edit:    Parse.Object.extend('Edit'),
   Locale:  Parse.Object.extend('Locale'),
 
+  // db queries
+
+  UserQuery: Parse.Query(Parse.User),
+  RoleQuery: Parse.Query(Parse.Role),
+  ContentQuery: Parse.Query('Content'),
+  LocaleQuery: Parse.Query('Locale'),
+
   beforeSaveUser: function(req, res, ownerCode) {
     var user = req.object;
     
@@ -21,7 +28,7 @@ module.exports = {
   },
 
   checkQcInit: function(req, res) {
-    var query = new Parse.Query(Parse.User);
+    var query = new this.UserQuery();
     query.find().then(function(users) {
       return res.success(!!users.length);
     });
@@ -43,7 +50,7 @@ module.exports = {
     var roleACL = new Parse.ACL();
     roleACL.setPublicReadAccess(true);
 
-    var userQuery = new Parse.Query(Parse.User);
+    var userQuery = new this.UserQuery();
     userQuery.find().then(function(users) {
 
       // if first user, auto assign them as admin
@@ -58,7 +65,7 @@ module.exports = {
 
       // if not first user, auto assign them as editor
       } else {
-        var editorRoleQuery = new Parse.Query(Parse.Role);
+        var editorRoleQuery = new this.RoleQuery();
         editorRoleQuery.equalTo('name', 'Editor');
         editorRoleQuery.first().then(function(editorRole) {
 
@@ -93,7 +100,7 @@ module.exports = {
     var locale = new this.Locale();
     locale.id = localeId;
 
-    var query = new Parse.Query('Content');
+    var query = new this.ContentQuery();
     query.equalTo('contentId', contentId)
          .equalTo('locale', locale)
          .include('edits');
@@ -127,9 +134,15 @@ module.exports = {
     });
   },
 
+  getLocale: function(req, res) {
+    var localeString = req.params.localeString;
+    var localeQuery = new this.LocaleQuery();
+    localeQuery.equalTo('name', localeString);
+    localeQuery.first().then(function(locale) { res.success(locale) });
+  },
+
   getLocales: function(req, res) {
-    var localeStrings = req.params.localeStrings;
-    var localeQuery = new Parse.Query('Locale');
+    var localeQuery = new this.LocaleQuery();
     localeQuery.find().then(function(locales) { res.success(locales) });
   },
 

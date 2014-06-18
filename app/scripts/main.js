@@ -49,6 +49,7 @@ function QuickChange(appId, jsKey, options) {
     go: function(isInit) {
       if (isInit) {
         this.initCss();
+        this.currentUser = Parse.User.current();
         if (!!this.currentUser) {
           this.toggleEditable(true);
           this.setupLogout();

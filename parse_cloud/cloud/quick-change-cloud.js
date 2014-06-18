@@ -7,13 +7,6 @@ module.exports = {
   Edit:    Parse.Object.extend('Edit'),
   Locale:  Parse.Object.extend('Locale'),
 
-  // db queries
-
-  UserQuery: Parse.Query(Parse.User),
-  RoleQuery: Parse.Query(Parse.Role),
-  ContentQuery: Parse.Query('Content'),
-  LocaleQuery: Parse.Query('Locale'),
-
   beforeSaveUser: function(req, res, ownerCode) {
     var user = req.object;
     
@@ -28,7 +21,7 @@ module.exports = {
   },
 
   checkQcInit: function(req, res) {
-    var query = new this.UserQuery();
+    var query = new Parse.Query(Parse.User);
     query.find().then(function(users) {
       return res.success(!!users.length);
     });
@@ -50,7 +43,7 @@ module.exports = {
     var roleACL = new Parse.ACL();
     roleACL.setPublicReadAccess(true);
 
-    var userQuery = new this.UserQuery();
+    var userQuery = new Parse.Query(Parse.User);
     userQuery.find().then(function(users) {
 
       // if first user, auto assign them as admin
@@ -59,13 +52,11 @@ module.exports = {
           roleACL: roleACL,
           user: user,
           name: 'Admin'
-        }).then(function() {
-          module.createDefaultLocale(user);
         });
 
       // if not first user, auto assign them as editor
       } else {
-        var editorRoleQuery = new this.RoleQuery();
+        var editorRoleQuery = new Parse.Query(Parse.Role);
         editorRoleQuery.equalTo('name', 'Editor');
         editorRoleQuery.first().then(function(editorRole) {
 
@@ -98,9 +89,9 @@ module.exports = {
 
     // must instantiate new Locale() to query (#smdh)
     var locale = new this.Locale();
-    locale.id = localeId;
+    locale.id  = localeId;
 
-    var query = new this.ContentQuery();
+    var query = new Parse.Query('Content');
     query.equalTo('contentId', contentId)
          .equalTo('locale', locale)
          .include('edits');
@@ -134,24 +125,68 @@ module.exports = {
     });
   },
 
-  getLocale: function(req, res) {
-    var localeString = req.params.localeString;
-    var localeQuery = new this.LocaleQuery();
-    localeQuery.equalTo('name', localeString);
-    localeQuery.first().then(function(locale) { res.success(locale) });
-  },
-
-  getLocales: function(req, res) {
-    var localeQuery = new this.LocaleQuery();
-    localeQuery.find().then(function(locales) { res.success(locales) });
-  },
-
-  createDefaultLocale: function(user) {
-    console.log(user);
+  createLocale: function(args) {
     var locale = new this.Locale();
     return locale.save({
-      name: user.get('defaultLanguage'),
-      isDefault: true
+      name: args.name,
+      isDefault: args.isDefault
+    });
+  },
+
+  findOrCreateLocale: function(req, res) {
+    var name = req.params.name;
+    var module = this;
+    var localeQuery = new Parse.Query('Locale');
+    localeQuery.find().then(function(locales) {
+
+      // if no locales present, create it
+      if (!locales.length) {
+        module.createLocale({
+          isDefault: true,
+          name: name
+        }).then(function(newLocale) {
+          res.success(newLocale);
+        });
+      } else {
+        if (!name) {
+
+          // return the default locale
+          locale = locales.filter(function(locale) { return locale.get('isDefault'); })[0];
+          res.success(locale);
+        } else {
+
+          if ((locales.length == 1) && (!locales[0].get('name'))) {
+
+            // create and override blank locale
+            module.createLocale({
+              isDefault: true,
+              name: name
+            }).then(function(newLocale) {
+              locales[0].set('isDefault', false);
+              locales[0].save();
+              
+              res.success(newLocale);
+            });
+          } else {
+
+            // return the default locale
+            locale = locales.filter(function(locale) { return (locale.get('name') == name); })[0];
+            
+            if (!!locale) {
+              res.success(locale);
+            } else {
+
+              // create new locale
+              module.createLocale({
+                isDefault: false,
+                name: name
+              }).then(function(newLocale) {
+                res.success(newLocale);
+              });
+            }
+          }
+        }
+      }
     });
   }
 }

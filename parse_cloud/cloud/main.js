@@ -17,8 +17,8 @@ Parse.Cloud.define('checkQcInit', function(req, res) {
   QuickChangeCloud.checkQcInit(req, res);
 });
 
-Parse.Cloud.define('getLocale', function(req, res) {
-  QuickChangeCloud.getLocale(req, res);
+Parse.Cloud.define('findOrCreateLocale', function(req, res) {
+  QuickChangeCloud.findOrCreateLocale(req, res);
 });
 
 Parse.Cloud.define('getLocales', function(req, res) {

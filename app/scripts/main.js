@@ -19,6 +19,8 @@ function QuickChange(appId, jsKey, options) {
       logout: /#qclogout/
     },
 
+    localeName: $('html').attr('lang'),
+
     elems: {
       $head: $('head'),
       $body: $('body'),
@@ -27,7 +29,6 @@ function QuickChange(appId, jsKey, options) {
           "<input name='username' type='text' placeholder='username' />" +
           "<input name='password' type='password' placeholder='password' />" +
           "<input name='owner-code' type='password' placeholder='owner code' />" +
-          "<input name='default-language' type='text' placeholder='default language' />" +
           "<a class='submit' href='#'>submit</a>" +
         "</form>" +
       "</div>"),
@@ -53,7 +54,7 @@ function QuickChange(appId, jsKey, options) {
           this.getCurrentUserRole();
           this.displayPending = true;
         }
-        this.getLocales();
+        this.findOrCreateLocale();
       }
       this.insertStyleTag();
       this.setupUserActions();
@@ -96,9 +97,8 @@ function QuickChange(appId, jsKey, options) {
       };
     },
 
-    handleLocales: function(localeArray) {
-      this.createLocales(localeArray);
-      this.setCurrentLocale();
+    handleLocale: function(locale) {
+      this.setCurrentLocale(locale);
       this.activateElems();
     },
 
@@ -110,7 +110,6 @@ function QuickChange(appId, jsKey, options) {
       this.elems.$modal.$username        = this.elems.$modal.find('[name=username]');
       this.elems.$modal.$password        = this.elems.$modal.find('[name=password]');
       this.elems.$modal.$ownerCode       = this.elems.$modal.find('[name=owner-code]');
-      this.elems.$modal.$defaultLanguage = this.elems.$modal.find('[name=default-language]');
       this.elems.$modal.$submit          = this.elems.$modal.find('.submit');
     },
 
@@ -119,8 +118,14 @@ function QuickChange(appId, jsKey, options) {
       query.equalTo('users', this.currentUser).first().then(this.handleUserRole.bind(this));
     },
 
+    findOrCreateLocale: function() {
+      Parse.Cloud.run('findOrCreateLocale', {
+        name: this.localeName
+      }).then(this.handleLocale.bind(this));
+    },
+
     getLocales: function() {
-      Parse.Cloud.run('getLocales').then(this.handleLocales.bind(this));
+      Parse.Cloud.run('getLocales').then(this.handleLocale.bind(this));
     },
 
     handleLoginError: function(user, error) {
@@ -158,7 +163,6 @@ function QuickChange(appId, jsKey, options) {
       user.set("username", this.elems.$modal.$username.val());
       user.set("password", this.elems.$modal.$password.val());
       user.set("ownerCode", this.elems.$modal.$ownerCode.val());
-      user.set("defaultLanguage", this.elems.$modal.$defaultLanguage.val());
 
       user.signUp(null, {
         success: this.handleLoginOrSignupSuccess.bind(this),
@@ -187,15 +191,7 @@ function QuickChange(appId, jsKey, options) {
     },
 
     setCurrentLocale: function(locale) {
-      if (!!locale) {
-        return this.currentLocale = locale;
-      } else {
-        for (var i = this.locales.length - 1; i >= 0; i--) {
-          if (this.locales[i].dbObject.get('isDefault')) {
-            return this.currentLocale = this.locales[i];
-          }
-        }
-      }
+      this.currentLocale = locale;
     },
 
     handleUserRole: function(role) {
@@ -215,7 +211,6 @@ function QuickChange(appId, jsKey, options) {
 
     setupLogin: function() {
       this.elems.$modal.$ownerCode.remove();
-      this.elems.$modal.$defaultLocale.remove();
       this.elems.$modal.$submit.click(this.handleLoginSubmit.bind(this));
     },
 
@@ -232,7 +227,6 @@ function QuickChange(appId, jsKey, options) {
     },
 
     setupSignup: function() {
-      this.elems.$modal.$defaultLocale.remove();
       this.elems.$modal.$submit.click(this.handleInitOrSignupSubmit.bind(this));
     },
 
@@ -348,7 +342,7 @@ function QuickChange(appId, jsKey, options) {
     this.edits = [];
     this.initCss();
     this.setId();
-    this.findFromDb();
+    this.findOrCreateContent();
     this.setupSaveOnBlur();
   }
 
@@ -404,11 +398,11 @@ function QuickChange(appId, jsKey, options) {
       (!!this.qc.currentUser && this.pendingHtmlIsInDb())
     },
 
-    findFromDb: function() {
+    findOrCreateContent: function() {
       Parse.Cloud.run('findOrCreateContent', {
         contentId: this.id,
         html: this.elem.html(),
-        localeId: this.qc.currentLocale.dbObject.id
+        localeId: this.qc.currentLocale.id
       }).then(this.handleContentFromDb.bind(this));
     },
 

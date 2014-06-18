@@ -81,15 +81,40 @@ module.exports = {
     });
   },
 
+  instatiateLocale: function(localedId) {
+    var locale = new this.Locale();
+    locale.id  = localeId;
+    return locale;
+  },
+
+  saveEdit: function(req, res) {
+    var module    = this,
+        user      = req.user,
+        contentId = req.params.contentId,
+        html      = req.params.html,
+        edit      = new module.Edit(),
+        query     = new Parse.Query('Content');
+
+    edit.save({
+      html: html,
+      isLive: false,
+      user: user
+    }).then(function(edit) {
+      return query.include('edits').get(contentId);
+    }).then(function(content) {
+      content.addUnique('edits', edit);
+      return content.save();
+    }).then(function(content) {
+      return res.success(content);
+    });
+  },
+
   findOrCreateContent: function(req, res) {
     var module    = this,
         contentId = req.params.contentId,
         html      = req.params.html,
-        localeId  = req.params.localeId;
-
-    // must instantiate new Locale() to query (#smdh)
-    var locale = new this.Locale();
-    locale.id  = localeId;
+        localeId  = req.params.localeId,
+        locale    = module.instatiateLocale(localeId);
 
     var query = new Parse.Query('Content');
     query.equalTo('contentId', contentId)
@@ -164,7 +189,7 @@ module.exports = {
             }).then(function(newLocale) {
               locales[0].set('isDefault', false);
               locales[0].save();
-              
+
               res.success(newLocale);
             });
           } else {

@@ -21,6 +21,10 @@ Parse.Cloud.define('findOrCreateLocale', function(req, res) {
   QuickChangeCloud.findOrCreateLocale(req, res);
 });
 
+Parse.Cloud.define('saveEdit', function(req, res) {
+  QuickChangeCloud.saveEdit(req, res);
+});
+
 Parse.Cloud.define('getLocales', function(req, res) {
   QuickChangeCloud.getLocales(req, res);
 });

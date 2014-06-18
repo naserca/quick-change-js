@@ -399,17 +399,10 @@ function QuickChange(appId, jsKey, options) {
     },
 
     saveToDb: function() {
-      if (!!this.qc.currentUser) {
-        if (this.qc.currentUser.get('role') != 'admin') {
-          this.dbObject.save({ pendingHtml: this.elem.html() });
-        } else {
-          this.dbObject.save({
-            html: this.elem.html(),
-            pendingHtml: ''
-          });
-          this.changeToLiveStyle();
-        }
-      }
+      Parse.Cloud.run('saveEdit', {
+        html: this.elem.html(),
+        contentId: this.dbObject.id
+      });
     },
 
     setId: function() {

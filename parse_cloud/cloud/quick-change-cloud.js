@@ -81,7 +81,7 @@ module.exports = {
     });
   },
 
-  instatiateLocale: function(localedId) {
+  instatiateLocale: function(localeId) {
     var locale = new this.Locale();
     locale.id  = localeId;
     return locale;
@@ -99,7 +99,7 @@ module.exports = {
       html: html,
       isLive: false,
       user: user
-    }).then(function(edit) {
+    }).then(function() {
       return query.include('edits').get(contentId);
     }).then(function(content) {
       content.addUnique('edits', edit);

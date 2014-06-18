@@ -42,13 +42,13 @@ function QuickChange(appId, jsKey, options) {
     ////////// init
 
     init: function(appId, jsKey, options) {
+      this.initCss();
       Parse.initialize(appId, jsKey);
       Parse.Cloud.run('checkQcInit').then(this.go.bind(this));
     },
 
     go: function(isInit) {
       if (isInit) {
-        this.initCss();
         this.currentUser = Parse.User.current();
         if (!!this.currentUser) {
           this.toggleEditable(true);
@@ -57,6 +57,8 @@ function QuickChange(appId, jsKey, options) {
           this.displayPending = true;
         }
         this.findOrCreateLocale();
+      } else {
+        this.initCss();
       }
       this.insertStyleTag();
       this.setupUserActions();
@@ -104,10 +106,10 @@ function QuickChange(appId, jsKey, options) {
     },
 
     findModalElems: function() {
-      this.elems.$modal.$username        = this.elems.$modal.find('[name=username]');
-      this.elems.$modal.$password        = this.elems.$modal.find('[name=password]');
-      this.elems.$modal.$ownerCode       = this.elems.$modal.find('[name=owner-code]');
-      this.elems.$modal.$submit          = this.elems.$modal.find('.submit');
+      this.elems.$modal.$username  = this.elems.$modal.find('[name=username]');
+      this.elems.$modal.$password  = this.elems.$modal.find('[name=password]');
+      this.elems.$modal.$ownerCode = this.elems.$modal.find('[name=owner-code]');
+      this.elems.$modal.$submit    = this.elems.$modal.find('.submit');
     },
 
     getCurrentUserRole: function() {
@@ -398,7 +400,7 @@ function QuickChange(appId, jsKey, options) {
       }).then(this.handleContentFromDb.bind(this));
     },
 
-    saveToDb: function() {
+    saveEdit: function() {
       Parse.Cloud.run('saveEdit', {
         html: this.elem.html(),
         contentId: this.dbObject.id
@@ -410,7 +412,7 @@ function QuickChange(appId, jsKey, options) {
     },
 
     setupSaveOnBlur: function() {
-      this.elem.blur(this.saveToDb.bind(this));
+      this.elem.blur(this.saveEdit.bind(this));
     }
 
   };

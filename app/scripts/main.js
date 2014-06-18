@@ -36,7 +36,7 @@ function QuickChange(appId, jsKey, options) {
         "<a id='cms-reveal' href=''>qc</a>" +
         "<a id='cms-approve-all' href=''>approve all</a>" +
         "<a id='cms-toggle-pending' href=''>" +
-          "<span class='cms-live'>show live</span><span class='cms-pending'>show pending</span>" +
+          "<span id='cms-show-live'>show live</span><span id='cms-show-pending'>show pending</span>" +
         "</a>" +
         "<a id='cms-logout' href=''>logout</a>" +
       "</div>"),
@@ -88,10 +88,12 @@ function QuickChange(appId, jsKey, options) {
 
     addMenu: function() {
       this.findMenuElems();
+      this.elems.$menu.$showPending.hide();
       if (!this.currentUser.get('isAdmin')) {
         this.elems.$menu.$approveAll.remove();
       }
       this.elems.$menu.appendTo('body');
+      this.setupMenuClickHandlers();
     },
 
     addModal: function() {
@@ -215,6 +217,28 @@ function QuickChange(appId, jsKey, options) {
 
     setCurrentLocale: function(locale) {
       this.currentLocale = locale;
+    },
+
+    setupMenuClickHandlers: function() {
+      this.elems.$menu.$togglePending.click(this.onTogglePendingClick.bind(this));
+    },
+
+    onTogglePendingClick: function(ev) {
+      ev.preventDefault();
+      this.togglePending();
+    },
+
+    togglePending: function() {
+      this.displayPending = !this.displayPending;
+      for (var i = this.contents.length - 1; i >= 0; i--) {
+        this.contents[i].displayEdit();
+      };
+      this.togglePendingUI();
+    },
+
+    togglePendingUI: function() {
+      this.elems.$menu.$showLive.toggle(0);
+      this.elems.$menu.$showPending.toggle(0);
     },
 
     handleUserRole: function(role) {

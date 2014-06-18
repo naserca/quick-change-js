@@ -48,6 +48,7 @@ function QuickChange(appId, jsKey, options) {
 
     go: function(isInit) {
       if (isInit) {
+        this.initCss();
         if (!!this.currentUser) {
           this.toggleEditable(true);
           this.setupLogout();
@@ -88,15 +89,6 @@ function QuickChange(appId, jsKey, options) {
       return window.location.replace(cleanUrl);
     },
 
-    createLocales: function(localeArray) {
-      for (var i = localeArray.length - 1; i >= 0; i--) {
-        var locale = new Locale({
-          dbObject: localeArray[i]
-        });
-        this.locales.push(locale);
-      };
-    },
-
     handleLocale: function(locale) {
       this.setCurrentLocale(locale);
       this.activateElems();
@@ -104,6 +96,10 @@ function QuickChange(appId, jsKey, options) {
 
     handleBodyClick: function(ev) {
       this.elems.$modal.fadeOut(this.clearUrlTrigger.bind(this));
+    },
+
+    initCss: function() {
+      this.elems.$dataCms.hide();
     },
 
     findModalElems: function() {
@@ -340,7 +336,6 @@ function QuickChange(appId, jsKey, options) {
     this.qc    = args.qc;
     this.elem  = args.elem;
     this.edits = [];
-    this.initCss();
     this.setId();
     this.findOrCreateContent();
     this.setupSaveOnBlur();
@@ -394,22 +389,12 @@ function QuickChange(appId, jsKey, options) {
       this.displayEdit();
     },
 
-    displayEdits: function() {
-      (!!this.qc.currentUser && this.pendingHtmlIsInDb())
-    },
-
     findOrCreateContent: function() {
       Parse.Cloud.run('findOrCreateContent', {
         contentId: this.id,
         html: this.elem.html(),
         localeId: this.qc.currentLocale.id
       }).then(this.handleContentFromDb.bind(this));
-    },
-
-    initCss: function() {
-      this.elem.css({
-        display: 'none',
-      });
     },
 
     saveToDb: function() {
@@ -433,16 +418,6 @@ function QuickChange(appId, jsKey, options) {
     setupSaveOnBlur: function() {
       this.elem.blur(this.saveToDb.bind(this));
     }
-
-  };
-
-  ////////// locale //////////
-
-  function Locale(args) {
-    this.dbObject = args.dbObject;
-  }
-
-  Locale.prototype = {
 
   };
 

@@ -24,13 +24,21 @@ function QuickChange(appId, jsKey, options) {
     elems: {
       $head: $('head'),
       $body: $('body'),
-      $modal: $("<div href='#' class='cms-signup cms-modal' style='display: none;'>" +
+      $userActionModal: $("<div href='#' class='cms-signup cms-modal' style='display: none;'>" +
         "<form>" +
           "<input name='username' type='text' placeholder='username' />" +
           "<input name='password' type='password' placeholder='password' />" +
           "<input name='owner-code' type='password' placeholder='owner code' />" +
           "<a class='submit' href='#'>submit</a>" +
         "</form>" +
+      "</div>"),
+      $menu: $("<div id='cms-menu'>" +
+        "<a id='cms-reveal' href=''>qc</a>" +
+        "<a id='cms-approve-all' href=''>approve all</a>" +
+        "<a id='cms-toggle-pending' href=''>" +
+          "<span class='cms-live'>show live</span><span class='cms-pending'>show pending</span>" +
+        "</a>" +
+        "<a id='cms-logout' href=''>logout</a>" +
       "</div>"),
       $dataCms: $('[data-cms]')
     },
@@ -78,10 +86,18 @@ function QuickChange(appId, jsKey, options) {
       });
     },
 
+    addMenu: function() {
+      this.findMenuElems();
+      if (!this.currentUser.get('isAdmin')) {
+        this.elems.$menu.$approveAll.remove();
+      }
+      this.elems.$menu.appendTo('body');
+    },
+
     addModal: function() {
       this.findModalElems();
-      this.elems.$body.append(this.elems.$modal);
-      this.elems.$modal.fadeIn();
+      this.elems.$body.append(this.elems.$userActionModal);
+      this.elems.$userActionModal.fadeIn();
       this.setupBodyClickHandler();
     },
 
@@ -98,18 +114,26 @@ function QuickChange(appId, jsKey, options) {
     },
 
     handleBodyClick: function(ev) {
-      this.elems.$modal.fadeOut(this.clearUrlTrigger.bind(this));
+      this.elems.$userActionModal.fadeOut(this.clearUrlTrigger.bind(this));
     },
 
     initCss: function() {
       this.elems.$dataCms.hide();
     },
 
+    findMenuElems: function() {
+      this.elems.$menu.$reveal        = this.elems.$menu.find('#cms-reveal');
+      this.elems.$menu.$approveAll    = this.elems.$menu.find('#cms-approve-all');
+      this.elems.$menu.$togglePending = this.elems.$menu.find('#cms-toggle-pending');
+      this.elems.$menu.$showLive      = this.elems.$menu.find('#cms-show-live');
+      this.elems.$menu.$showPending   = this.elems.$menu.find('#cms-show-pending');
+    },
+
     findModalElems: function() {
-      this.elems.$modal.$username  = this.elems.$modal.find('[name=username]');
-      this.elems.$modal.$password  = this.elems.$modal.find('[name=password]');
-      this.elems.$modal.$ownerCode = this.elems.$modal.find('[name=owner-code]');
-      this.elems.$modal.$submit    = this.elems.$modal.find('.submit');
+      this.elems.$userActionModal.$username  = this.elems.$userActionModal.find('[name=username]');
+      this.elems.$userActionModal.$password  = this.elems.$userActionModal.find('[name=password]');
+      this.elems.$userActionModal.$ownerCode = this.elems.$userActionModal.find('[name=owner-code]');
+      this.elems.$userActionModal.$submit    = this.elems.$userActionModal.find('.submit');
     },
 
     getCurrentUserRole: function() {
@@ -128,14 +152,14 @@ function QuickChange(appId, jsKey, options) {
     },
 
     handleLoginError: function(user, error) {
-      this.elems.$modal.$username.val(''); this.elems.$modal.$password.val('');
+      this.elems.$userActionModal.$username.val(''); this.elems.$userActionModal.$password.val('');
       alert(error.message);
     },
 
     handleLoginSubmit: function(ev) {
       ev.preventDefault();
 
-      Parse.User.logIn(this.elems.$modal.$username.val(), this.elems.$modal.$password.val(), {
+      Parse.User.logIn(this.elems.$userActionModal.$username.val(), this.elems.$userActionModal.$password.val(), {
         success: this.handleLoginOrSignupSuccess.bind(this),
         error: this.handleLoginError.bind(this)
       });
@@ -143,7 +167,7 @@ function QuickChange(appId, jsKey, options) {
 
     handleLoginOrSignupSuccess: function(user) {
       this.currentUser = user;
-      this.elems.$modal.fadeOut(this.elems.$modal.remove);
+      this.elems.$userActionModal.fadeOut(this.elems.$userActionModal.remove);
       this.toggleEditable(true);
 
       // will refresh page!
@@ -151,7 +175,7 @@ function QuickChange(appId, jsKey, options) {
     },
 
     handleSignupError: function(user, error) {
-      this.elems.$modal.$username.val(''); this.elems.$modal.$password.val(''); this.elems.$modal.$ownerCode.val('');
+      this.elems.$userActionModal.$username.val(''); this.elems.$userActionModal.$password.val(''); this.elems.$userActionModal.$ownerCode.val('');
       alert(error.message);
     },
 
@@ -159,9 +183,9 @@ function QuickChange(appId, jsKey, options) {
       ev.preventDefault();
 
       var user = new Parse.User();
-      user.set("username", this.elems.$modal.$username.val());
-      user.set("password", this.elems.$modal.$password.val());
-      user.set("ownerCode", this.elems.$modal.$ownerCode.val());
+      user.set("username", this.elems.$userActionModal.$username.val());
+      user.set("password", this.elems.$userActionModal.$password.val());
+      user.set("ownerCode", this.elems.$userActionModal.$ownerCode.val());
 
       user.signUp(null, {
         success: this.handleLoginOrSignupSuccess.bind(this),
@@ -195,6 +219,7 @@ function QuickChange(appId, jsKey, options) {
 
     handleUserRole: function(role) {
       this.currentUser.set('isAdmin', (role.getName() == 'Admin'));
+      this.addMenu();
     },
 
     setUsers: function(parseResults) {
@@ -203,18 +228,18 @@ function QuickChange(appId, jsKey, options) {
 
     setupBodyClickHandler: function() {
       this.elems.$body.click(this.handleBodyClick.bind(this));
-      this.elems.$modal.click(function(ev) {
+      this.elems.$userActionModal.click(function(ev) {
         ev.stopPropagation();
       });
     },
 
     setupLogin: function() {
-      this.elems.$modal.$ownerCode.remove();
-      this.elems.$modal.$submit.click(this.handleLoginSubmit.bind(this));
+      this.elems.$userActionModal.$ownerCode.remove();
+      this.elems.$userActionModal.$submit.click(this.handleLoginSubmit.bind(this));
     },
 
     setupInit: function() {
-      this.elems.$modal.$submit.click(this.handleInitOrSignupSubmit.bind(this));
+      this.elems.$userActionModal.$submit.click(this.handleInitOrSignupSubmit.bind(this));
     },
 
     setupLogout: function() {
@@ -226,7 +251,7 @@ function QuickChange(appId, jsKey, options) {
     },
 
     setupSignup: function() {
-      this.elems.$modal.$submit.click(this.handleInitOrSignupSubmit.bind(this));
+      this.elems.$userActionModal.$submit.click(this.handleInitOrSignupSubmit.bind(this));
     },
 
     setupUserActions: function() {

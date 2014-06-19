@@ -453,7 +453,12 @@ function QuickChange(appId, jsKey, options) {
       Parse.Cloud.run('saveEdit', {
         html: this.elem.html(),
         contentId: this.dbObject.id
-      });
+      }).then(this.handleSavedEdit.bind(this));
+    },
+
+    handleSavedEdit: function(edit) {
+      this.edits.add(edit);
+      this.setLastEdit();
     },
 
     setId: function() {

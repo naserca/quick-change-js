@@ -105,7 +105,7 @@ module.exports = {
       content.addUnique('edits', edit);
       return content.save();
     }).then(function(content) {
-      return res.success(content);
+      return res.success(edit);
     });
   },
 
